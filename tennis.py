@@ -135,6 +135,9 @@ def handle_exception(slot,str,weeknr):
 
 def handleTimeslotDetails(str):
     global tsdata
+    global timeslots
+    global tsdata
+
     data_start=0
     data_end=0
     counter=0
@@ -299,8 +302,8 @@ def match_players(player1,player2,force,ranking):
         mark="T"
     (slot1,name1,counter1)=player1
     (slot2,name2,counter2)=player2
-    for j in range(timeslots,0):
-        for i in range(weeks,0):
+    for j in range(timeslots):
+        for i in range(weeks):
             if (slot1[i][j] == 'c' and slot2[i][j] == 'c' and result[i][j] == ""
                 and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week) :
                 result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1, name2)
@@ -315,8 +318,6 @@ def match_players(player1,player2,force,ranking):
     if force==True:
         for j in range(timeslots):
             for i in range(weeks):
-                slot1,name1,counter1=player1
-                slot2,name2,counter2=player2
                 if (slot1[i][j] == 'c'
                     and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != 'a'
                     and result[i][j] == ""
@@ -334,8 +335,6 @@ def match_players(player1,player2,force,ranking):
                     return (slot1,name1,counter1),(slot2,name2,counter2),True
         for j in range(timeslots):
             for i in range(weeks):
-                slot1,name1,counter1=player1
-                slot2,name2,counter2=player2
                 if (slot2[i][j] == 'c'
                     and slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != 'a'
                     and result[i][j] == ""
@@ -350,8 +349,6 @@ def match_players(player1,player2,force,ranking):
                     return (slot1,name1,counter1),(slot2,name2,counter2),True
         for j in range(timeslots):
             for i in range(weeks):
-                slot1,name1,counter1=player1
-                slot2,name2,counter2=player2
                 if (slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != 'a'
                     and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != 'a'
                     and result[i][j] == ""
@@ -365,16 +362,21 @@ def match_players(player1,player2,force,ranking):
                     slot2[i][j] = mark
                     return (slot1,name1,counter1),(slot2,name2,counter2),True
     #if ranking==True:
-    #    print comments+" FAILURE"
+    #    print comments+name1+" - "+name2+" FAILURE:"
     return (slot1,name1,counter1),(slot2,name2,counter2),False
 
 
 def handle_group(first,last):
+    global ranking_failure_counter
+    global ranking_failure_report
     for i in range(first, last+1):
         for j in range(i+1, last+1):
-            x,y,res=match_players(players[i],players[j],True,True)
-            players[i]=copy.deepcopy(x)
-            players[j]=copy.deepcopy(y)
+            players[i],players[j],res = match_players(players[i],players[j],True,True)
+            if res == False:
+                slot1,name1,counter1=players[i]
+                slot2,name2,counter2=players[j]
+                ranking_failure_report += "# Ranking failure between: "+name1+" - "+name2 + "\n"
+                ranking_failure_counter +=1
 
 
 def handle_rankings():
@@ -383,65 +385,10 @@ def handle_rankings():
         handle_group(a,b)
 
 
-def handle_training_by_least_played_both():
-    least_played_counter=1000
-    for i in range(players_nr):
-        slot1,name1,counter1=players[i]
-        if counter1<least_played_counter:
-            least_played_counter=counter1
-            least_played=i
-    second_least_counter=1000
-    for j in range(players_nr):
-        slot2,name2,counter2=players[j]
-        if j != least_played and counter2<second_least_counter:
-            second_least_counter=counter2
-            second_least_played=j
-    #print "handle_training_by_least_played_both: "+str(least_played)+"-"+str(second_least_played)
-    x,y,res=match_players(players[least_played],players[second_least_played],True,False)
-    players[least_played]=copy.deepcopy(x)
-    players[second_least_played]=copy.deepcopy(y)
-    return res
+def handle_training_by_best_effort_random(mode):
 
-
-def handle_training_by_least_played_one():
-    least_played_counter=1000
-    for i in range(players_nr):
-        slot1,name1,counter1=players[i]
-        if counter1<least_played_counter:
-            least_played_counter=counter1
-            least_played=i
-    second_least_counter=1000
-    for i in range(players_nr):
-        slot1,name1,counter1=players[i]
-        second_least_counter=counter1
-        second_least_played=i
-        #print "handle_training_by_least_played_one: "+str(least_played)+"-"+str(second_least_played)
-        x,y,res=match_players(players[least_played],players[second_least_played],True,False)
-        players[least_played]=copy.deepcopy(x)
-        players[second_least_played]=copy.deepcopy(y)
-        if res==True:
-            return res
-    return False
-
-
-def handle_training_by_best_effort_loop():
-    for i in range(players_nr):
-        slot1,name1,counter1=players[i]
-        for j in range(players_nr):
-            slot2,name2,counter2=players[j]
-            if i!=j:
-                #print "handle_training_by_best_effort: "+str(name1)+"-"+str(name2)
-                x,y,res=match_players(players[i],players[j],True,False)
-                players[i]=copy.deepcopy(x)
-                players[j]=copy.deepcopy(y)
-                if res==True:
-                    return True
-    return False
-
-
-def handle_training_by_best_effort_random():
     limit=2*players_nr/weeks+3
-    for x in range(0,500):
+    for x in range(0,1000):
         i=random.randint(0, players_nr-1)
         j=random.randint(0, players_nr-1)
         if i!=j:
@@ -451,10 +398,7 @@ def handle_training_by_best_effort_random():
             slot2,name2,counter2=players[j]
             if counter2 > limit:
                 continue
-            #print "handle_training_by_best_effort_random: "+str(name1)+"-"+str(name2)
-            x,y,res=match_players(players[i],players[j],True,False)
-            players[i]=copy.deepcopy(x)
-            players[j]=copy.deepcopy(y)
+            players[i],players[j],res = match_players(players[i],players[j],mode,False)
     return False
 
 
@@ -500,18 +444,29 @@ def main():
     global unused_slots_allowed
     global max_diff_between_most_and_least_plays
     global max_cycles
+    global unused_slots
+    global diff_most_least
+    global ranking_failure_counter
+    global ranking_failure_report
+    global cycles_used
 
     sys.stdout.write("\nStarted:")
     sys.stdout.flush()
-    cycles=0
+
+
+    cycles_used=0
+    max_play_per_week = 1
+    unused_slots_allowed = 0
+    max_diff_between_most_and_least_plays=2
+    max_cycles=1000
 
     while(True):
         timeslots = 0
         weeks = 0
         raw=""
         group_nr=0
-        max_play_per_week = 3
-        unused_slots_allowed = 10
+        ranking_failure_counter = 0
+        ranking_failure_report =""
         max_diff_between_most_and_least_plays=5
         max_cycles=10
 
@@ -524,25 +479,30 @@ def main():
         handle_rankings()
 
         while (True):
-            res = handle_training_by_best_effort_random()
+            res = handle_training_by_best_effort_random(False)
+            if res==False:
+                break
+        while (True):
+            res = handle_training_by_best_effort_random(True)
             if res==False:
                 break
 
-        unuzed = count_unused_timeslots()
+        unused_slots = count_unused_timeslots()
 
-        an_res = analyze()
-        if an_res>6:
+        diff_most_least = analyze()
+        if diff_most_least>=6:
             sys.stdout.write('+')
             sys.stdout.flush()
-        if an_res<4:
+        if diff_most_least<4:
             sys.stdout.write('-')
             sys.stdout.flush()
-        if an_res <= max_diff_between_most_and_least_plays and unuzed <= unused_slots_allowed:
+        if diff_most_least <= max_diff_between_most_and_least_plays and unused_slots <= unused_slots_allowed:
             break
-        cycles = cycles + 1
-        print cycles
-        if cycles > max_cycles:
+        cycles_used = cycles_used + 1
+        #print cycles
+        if cycles_used > max_cycles:
             break
+    
 
     print "\n\n\n\n\n\n\n\n"
     print "--------------------------------------------------------------------------------------------------------"
@@ -582,6 +542,11 @@ def main():
     print '========================================================================================='
     print "\n\n\n"
 
-
+    print "Report: "
+    print "   ranking failures: "+str(ranking_failure_counter)
+    print ranking_failure_report
+    print "   unused slots:     "+str(unused_slots)
+    print "   diff most/least:  "+str(diff_most_least)
+    print "   cycles used:      "+str(cycles_used)
 
 main()
