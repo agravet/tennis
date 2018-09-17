@@ -1,0 +1,72 @@
+starting_week=36
+ending_week=44
+timeslots=/
+    Monday_19:30_Martinmaki_R/
+    Monday_20:30_Martinmaki_R/
+    Monday_21:00_Martinmaki_L/
+    Tuesday_20:00_Olari_Court_2/
+    Thursday_7:00_Martinmaki_L/
+    Thursday_20:00_Martinmaki_L/
+    Friday_19:30_Martinmaki_R/
+    Friday_20:30_Martinmaki_R/
+    Friday_21:30_Martinmaki_R/
+    Sunday_19:00_Martinmaki_L/
+    Sunday_20:00_Martinmaki_L/
+
+ranking_group=1
+    name=LAITAMAKI
+        rule=ccccncnnnnn
+    name=RAEVUORI
+        rule=nccncnnnnnn
+    name=JARVELA
+        rule=cccccnnnnnn
+    name=MANNER
+        rule=nnnncnnnnnn
+ranking_group=2
+    name=VENKATA
+        rule=aaaaaaaaaaa
+    name=KARLSSON
+        rule=ccccncccccc
+    name=VARGA
+        rule=ccccacccccc
+    name=PALMROOS
+        rule=nnnnnnnnncc
+ranking_group=3
+    name=HALMETOJA
+        rule=cncnnnnnnnn
+    name=TANNINEN
+        rule=cccnnncnnnn
+    name=VAINIOMAKI
+        rule=ccccnccccnn
+    name=AIRAKSINEN
+        rule=ccccncccncc
+ranking_group=4
+    name=MAKELA
+        rule=cccnnncnncc
+    name=VAANANEN
+        rule=nnnncnnnnnn
+    name=EKHOLM
+        rule=cccnncnnncc
+    name=SZANTO
+        rule=aacaaaaacaa
+ranking_group=5
+    name=LUNDQVIST
+        rule=ccccnnnnncc
+    name=KJERIN
+        rule=ccccnccccnn
+    name=KRISHNAKUMAR
+        rule=ccccnnccnnn
+training_group=all_the_others
+    name=J_HAAPAKANGAS
+        rule=nnnnnnnnncc
+    name=SIDHWANI
+        rule=cnnnnncnnnn
+    name=LUUKAS
+        rule=ccccncccnnn
+    name=UM_HAAPAKANGAS
+        rule=cccnnnnnncc
+    name=CHERNOGOROV
+        rule=nnnncnnnnnn
+    name=AHOLA
+        rule=ccccnccnnnn
+end
