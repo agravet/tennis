@@ -16,6 +16,26 @@ def read_value(str,key):
     return ret,val_end
 
 
+def handle_comment_lines(str):
+    while(True):
+        key_start = str.find("#")
+        if key_start == -1:
+            return str
+        key_end=key_start+str[key_start:].find('\n')
+        str=str.replace(str[key_start:key_end],"",len(str))
+
+
+def read_pair(str,key):
+    key_start = str.find(key)
+    if key_start == -1:
+        return "",-1
+    key_end = key_start+len(key)
+    val_start=key_end+1
+    val_end=len(str)
+    ret=str[val_start:val_end]
+    return ret,val_end
+
+
 def check_next_key(str,key):
         key_start = str.find(key)
         if key_start > 5 or key_start == -1:
@@ -35,26 +55,23 @@ def pre_read_config():
     players_nr=0
     fh = open("tennis.conf", "r")
     raw = fh.read()
+    raw=handle_comment_lines(raw)
     raw=raw.replace(' ','',1000)
     raw=raw.replace("/\n","//",1000)
     raw=raw.replace("\n\n","\n",1000)
     starting_week,t_pos=read_value(raw,"starting_week")
-    #print starting_week
     ending_week,t_pos=read_value(raw,"ending_week")
-    #print ending_week
     if starting_week and ending_week:
         weeks=int(ending_week)-int(starting_week)+1
         if (weeks<0):
             weeks += 52
         base_week = int(starting_week)
     x,t_pos=read_value(raw,"timeslots")
-    #print x
     pos=t_pos
     while(True):
         x,t_pos=read_value(raw[pos:],"ranking_group")
         if t_pos<0:
             break
-        #print "ranking group: "+x
         group_nr+=1
         pos+=t_pos
         while(True):
@@ -137,7 +154,6 @@ def handleTimeslotDetails(str):
     global tsdata
     global timeslots
     global tsdata
-
     data_start=0
     data_end=0
     counter=0
@@ -162,13 +178,10 @@ def read_config():
     global a
     global groups
     global tsdata
-
     tsdata = [""]*timeslots
-
     groups=[0]*group_nr
     player_counter=-1
     players = [0] * players_nr
-
     a = [0] * weeks
     for i in range(weeks):
         a[i] = [0] * timeslots
@@ -178,12 +191,12 @@ def read_config():
 
     fh = open("tennis.conf", "r")
     raw = fh.read()
+    raw=handle_comment_lines(raw)
     raw=raw.replace(' ','',1000)
     raw=raw.replace("/\n","//",1000)
     raw=raw.replace("\n\n","\n",1000)
     ts,t_pos=read_value(raw,"timeslots")
     handleTimeslotDetails(ts)
-    #print x
     pos=t_pos
     last_group_start=0
     last_group_end=0
@@ -192,18 +205,15 @@ def read_config():
         gr_name,t_pos=read_value(raw[pos:],"ranking_group")
         if t_pos<0:
             break
-        #print "ranking group: "+x
         last_group_start=last_group_end
         pos+=t_pos
         while(True):
             last_group_end+=1
             name,t_pos=read_value(raw[pos:],"name")
-            #print "   player: "+name
             pos+=t_pos
             player_counter+=1
             rule,t_pos=read_value(raw[pos:],"rule")
             if rule:
-                #print "      rule: "+rule
                 data = copy.deepcopy(handle_rule(rule,weeks,timeslots))
                 players[player_counter]=(data,name,0)
                 tlength = len(rule)
@@ -216,12 +226,10 @@ def read_config():
             pos+=t_pos
             if check_next_key(raw[pos:],"name")==False:
                 if check_next_key(raw[pos:],"ranking_group")==True:
-                    #print "group: "+str(group_counter)+" "+gr_name+" start: "+str(last_group_start)+" end: "+str(last_group_end-1)
                     groups[group_counter]=(last_group_start,last_group_end-1)
                     group_counter+=1
                     break
                 if check_next_key(raw[pos:],"training_group")==True:
-                    #print "group: "+str(group_counter)+" "+gr_name+" start: "+str(last_group_start)+" end: "+str(last_group_end-1)
                     groups[group_counter]=(last_group_start,last_group_end-1)
                     group_counter+=1
                     break
@@ -233,12 +241,10 @@ def read_config():
                     players[player_counter]=(data,name,t)
                     pos+=t_pos
                 if check_next_key(raw[pos:],"ranking_group")==True:
-                    #print "group: "+str(group_counter)+" "+gr_name+" start: "+str(last_group_start)+" end: "+str(last_group_end-1)
                     groups[group_counter]=(last_group_start,last_group_end-1)
                     group_counter+=1
                     break
                 if check_next_key(raw[pos:],"training_group")==True:
-                    #print "group: "+str(group_counter)+" "+gr_name+" start: "+str(last_group_start)+" end: "+str(last_group_end-1)
                     groups[group_counter]=(last_group_start,last_group_end-1)
                     group_counter+=1
                     break
@@ -247,15 +253,12 @@ def read_config():
         x,t_pos=read_value(raw[pos:],"training_group")
         if t_pos<0:
             break
-        #print "training group: "+x
         pos+=t_pos
         while(True):
             name,t_pos=read_value(raw[pos:],"name")
-            #print "   player: "+name
             pos+=t_pos
             player_counter+=1
             rule,t_pos=read_value(raw[pos:],"rule")
-            #print "      rule: "+rule
             data = copy.deepcopy(handle_rule(rule,weeks,timeslots))
             players[player_counter]=(data,name,0)
             pos+=t_pos
@@ -426,12 +429,51 @@ def analyze():
 #####################################################################################
 #####################################################################################
 
+
 def main():
+
     global max_play_per_week
     global max_slots_left
     global max_diff_between_most_and_least_plays
     global max_cycles
 
+    #default settings
+    max_play_per_week = 1
+    max_slots_left = 0
+    max_diff_between_most_and_least_plays=2
+    max_cycles=500
+
+    #read command line parameters
+    for i in range(len(sys.argv)):
+
+        if sys.argv[i]=="help" or sys.argv[i]=="-h" or sys.argv[i]=="--help":
+            print "Usage:"
+            print "python "+sys.argv[0]+" max_cycles=500 max_plays_per_week=2 max_unused_lots=3 max_diff=2"
+
+        val,t_pos =read_pair(sys.argv[i], "max_cycles")
+        if val:
+            max_cycles = int(val)
+            print "max_cycles = "+str(max_cycles)
+            continue
+
+        val,t_pos =read_pair(sys.argv[i], "max_plays_per_week")
+        if val:
+            max_play_per_week = int(val)
+            print "max_plays_per_week = "+str(max_play_per_week)
+            continue
+
+        val,t_pos =read_pair(sys.argv[i], "max_unused_lots")
+        if val:
+            max_slots_left = int(val)
+            print "max_unused_lots = "+str(max_slots_left)
+            continue
+
+        val,t_pos =read_pair(sys.argv[i], "max_diff")
+        if val:
+            max_diff_between_most_and_least_plays = int(val)
+            print "max_diff = "+str(max_diff_between_most_and_least_plays)
+            continue
+        
     global timeslots
     global weeks
     global raw
@@ -447,7 +489,6 @@ def main():
     global ranking_failure_counter
     global ranking_failure_report
     global cycles_used
-
     global stored_result
     global stored_analyze
     global stored_players
@@ -455,14 +496,7 @@ def main():
     sys.stdout.write("\nStarted:")
     sys.stdout.flush()
 
-
     cycles_used=0
-    max_play_per_week = 1
-    max_slots_left = 0
-    max_diff_between_most_and_least_plays=2
-    max_cycles=500
-
-    
     best = 100
     best_index = 0
     best_cycle = 0
@@ -475,25 +509,33 @@ def main():
         ranking_failure_counter = 0
         ranking_failure_report =""
 
+        #read configuration
         pre_read_config()
         read_config()
         players_orig=copy.deepcopy(players)
 
         result=copy.deepcopy(a)
   
+        #handle ranking matches
         handle_rankings()
+
+        #handle training matches, respecting player options
         while (True):
             res = handle_training_by_best_effort_random(False)
             if res==False:
                 break
+
+        #handle training matches, forcinging player options
         while (True):
             res = handle_training_by_best_effort_random(True)
             if res==False:
                 break
 
+        #collect statitistical data
         unused_slots = count_unused_timeslots()
-
         diff_most_least = analyze()
+
+        #store best result so far
         if best > (diff_most_least + unused_slots):
             best = (diff_most_least + unused_slots)
             stored_result=copy.deepcopy(result)
@@ -504,18 +546,21 @@ def main():
             sys.stdout.write('-')
         sys.stdout.flush()
 
+        #stop looping if conditions are fulfilled
         if diff_most_least <= max_diff_between_most_and_least_plays and unused_slots <= max_slots_left:
             break
-        cycles_used = cycles_used + 1
-        #print cycles
         if cycles_used > max_cycles:
             break
+        else:
+            cycles_used = cycles_used + 1
         
+    #after loop, prepare results
     result= copy.deepcopy(stored_result)
     players=copy.deepcopy(stored_players)
     diff_most_least, unused_slots, best_cycle = stored_analyze
     
 
+    #prezent the results
     print "\n\n\n\n\n\n\n\n"
     print "--------------------------------------------------------------------------------------------------------"
     for i in range(group_nr):
