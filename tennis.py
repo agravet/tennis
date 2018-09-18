@@ -44,7 +44,6 @@ def check_next_key(str,key):
 
 
 def pre_read_config():
-    global timeslots
     global weeks
     global raw
     global group_nr
@@ -52,6 +51,7 @@ def pre_read_config():
     global players
     global base_week
     global groups
+    global timeslots
     players_nr=0
     fh = open("tennis.conf", "r")
     raw = fh.read()
@@ -61,61 +61,37 @@ def pre_read_config():
     raw=raw.replace("\n\n","\n",1000)
     starting_week,t_pos=read_value(raw,"starting_week")
     ending_week,t_pos=read_value(raw,"ending_week")
+  
     if starting_week and ending_week:
         weeks=int(ending_week)-int(starting_week)+1
         if (weeks<0):
             weeks += 52
         base_week = int(starting_week)
-    x,t_pos=read_value(raw,"timeslots")
-    pos=t_pos
-    while(True):
+    pos = 0;
+    group_nr=0
+    while (True):
         x,t_pos=read_value(raw[pos:],"ranking_group")
-        if t_pos<0:
+        if t_pos==-1:
             break
         group_nr+=1
         pos+=t_pos
-        while(True):
-            x,t_pos=read_value(raw[pos:],"name")
-            pos+=t_pos
-            players_nr+=1
-            rule,t_pos=read_value(raw[pos:],"rule")
-            tlength = len(rule)
-            if timeslots == 0:
-                timeslots=tlength
-            else:
-                if tlength != timeslots:
-                    print "timeslot length error in config, "+name
-                    exit(1)
-            pos+=t_pos
-            if check_next_key(raw[pos:],"name")==False:
-                if check_next_key(raw[pos:],"ranking_group")==True:
-                    break
-                if check_next_key(raw[pos:],"training_group")==True:
-                    break
-                x,t_pos=read_value(raw[pos:],"exception_week_rule")
-                if t_pos>-1:
-                    pos+=t_pos
-                if check_next_key(raw[pos:],"ranking_group")==True:
-                    break
-                if check_next_key(raw[pos:],"training_group")==True:
-                    break
-    while(True):
-        x,t_pos=read_value(raw[pos:],"training_group")
-        if t_pos<0:
+    
+    pos = 0;
+    players_nr=0
+    while (True):
+        x,t_pos=read_value(raw[pos:],"name")
+        if t_pos==-1:
             break
+        players_nr+=1
         pos+=t_pos
-        while(True):
-            x,t_pos=read_value(raw[pos:],"name")
-            pos+=t_pos
-            players_nr+=1
-            x,t_pos=read_value(raw[pos:],"rule")
-            pos+=t_pos
-            if check_next_key(raw[pos:],"name")==False:
-                x,t_pos=read_value(raw[pos:],"exception_week_rule")
-                if t_pos>-1:
-                    pos+=t_pos
-                if check_next_key(raw[pos:],"name")==False:
-                    break
+  
+    pos = 0;
+    timeslots=0
+    x,t_pos=read_value(raw[pos:],"rule")
+    if t_pos==-1:
+        return
+    timeslots=len(x)
+ 
 
 
 def handle_rule(str,weeks,timeslots):
@@ -208,46 +184,44 @@ def read_config():
         last_group_start=last_group_end
         pos+=t_pos
         while(True):
+            if check_next_key(raw[pos:],"ranking_group") or check_next_key(raw[pos:],"training_group"):
+                groups[group_counter]=(last_group_start,last_group_end-1)
+                group_counter+=1
+                break
             last_group_end+=1
+            
             name,t_pos=read_value(raw[pos:],"name")
+            if (t_pos==-1):
+                break
             pos+=t_pos
             player_counter+=1
+            
             rule,t_pos=read_value(raw[pos:],"rule")
-            if rule:
-                data = copy.deepcopy(handle_rule(rule,weeks,timeslots))
-                players[player_counter]=(data,name,0)
-                tlength = len(rule)
-                if timeslots == 0:
-                    timeslots=tlength
-                else:
-                    if tlength != timeslots:
-                        print "timeslot length error in config, "+name
-                        exit(1)
+            data = copy.deepcopy(handle_rule(rule,weeks,timeslots))
+            players[player_counter]=(data,name,0)
+            tlength = len(rule)
+            if timeslots == 0:
+                timeslots=tlength
+            else:
+                if tlength != timeslots:
+                    print "timeslot length error in config, "+name
+                    exit(1)
             pos+=t_pos
-            if check_next_key(raw[pos:],"name")==False:
-                if check_next_key(raw[pos:],"ranking_group")==True:
-                    groups[group_counter]=(last_group_start,last_group_end-1)
-                    group_counter+=1
-                    break
-                if check_next_key(raw[pos:],"training_group")==True:
-                    groups[group_counter]=(last_group_start,last_group_end-1)
-                    group_counter+=1
-                    break
+
+            if not check_next_key(raw[pos:],"exception_week_rule"):
+                continue;
+            
+            x,t_pos=read_value(raw[pos:],"exception_week_rule")
+            while t_pos>-1:
+                wnr,ts=getException(x)
+                (data,name,t)=players[player_counter]
+                data=copy.deepcopy(handle_exception(data,ts,wnr))
+                players[player_counter]=(data,name,t)
+                pos+=t_pos
+                if not check_next_key(raw[pos:],"exception_week_rule"):
+                    break;
                 x,t_pos=read_value(raw[pos:],"exception_week_rule")
-                if t_pos>-1:
-                    wnr,ts=getException(x)
-                    (data,name,t)=players[player_counter]
-                    data=copy.deepcopy(handle_exception(data,ts,wnr))
-                    players[player_counter]=(data,name,t)
-                    pos+=t_pos
-                if check_next_key(raw[pos:],"ranking_group")==True:
-                    groups[group_counter]=(last_group_start,last_group_end-1)
-                    group_counter+=1
-                    break
-                if check_next_key(raw[pos:],"training_group")==True:
-                    groups[group_counter]=(last_group_start,last_group_end-1)
-                    group_counter+=1
-                    break
+                
 
     while(True):
         x,t_pos=read_value(raw[pos:],"training_group")
@@ -256,22 +230,27 @@ def read_config():
         pos+=t_pos
         while(True):
             name,t_pos=read_value(raw[pos:],"name")
+            if t_pos == -1:
+                break
             pos+=t_pos
             player_counter+=1
             rule,t_pos=read_value(raw[pos:],"rule")
             data = copy.deepcopy(handle_rule(rule,weeks,timeslots))
             players[player_counter]=(data,name,0)
             pos+=t_pos
-            if check_next_key(raw[pos:],"name")==False:
+            if not check_next_key(raw[pos:],"exception_week_rule"):
+                continue;
+            x,t_pos=read_value(raw[pos:],"exception_week_rule")
+            while t_pos>-1:
+                wnr,ts=getException(x)
+                (data,name,t)=players[player_counter]
+                data=copy.deepcopy(handle_exception(data,ts,wnr))
+                players[player_counter]=(data,name,t)
+                pos+=t_pos
+                if not check_next_key(raw[pos:],"exception_week_rule"):
+                    break;
                 x,t_pos=read_value(raw[pos:],"exception_week_rule")
-                if t_pos>-1:
-                    wnr,ts=getException(x)
-                    (data,name,t)=players[player_counter]
-                    data=copy.deepcopy(handle_exception(data,ts,wnr))
-                    players[player_counter]=(data,name,t)
-                    pos+=t_pos
-                if check_next_key(raw[pos:],"name")==False:
-                    break
+
 
 
 def mark_related_timeslots(slot,week,timeslot):
@@ -307,7 +286,8 @@ def match_players(player1,player2,force,ranking):
     (slot2,name2,counter2)=player2
     for j in range(timeslots):
         for i in range(weeks):
-            if (slot1[i][j] == 'c' and slot2[i][j] == 'c' and result[i][j] == ""
+            if (slot1[i][j] == 'c' and slot2[i][j] == 'c' 
+                and result[i][j] == ""
                 and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week) :
                 result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1, name2)
                 counter1 +=1
@@ -515,7 +495,7 @@ def main():
         players_orig=copy.deepcopy(players)
 
         result=copy.deepcopy(a)
-  
+   
         #handle ranking matches
         handle_rankings()
 
