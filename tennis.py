@@ -2,7 +2,7 @@
 import copy
 import random
 import sys
-#exception_week_rule=26,aaaaaaaaaaa
+import time
 
 
 def read_value(str,key):
@@ -19,10 +19,13 @@ def read_value(str,key):
 def handle_comment_lines(str):
     while(True):
         key_start = str.find("#")
-        if key_start == -1:
+        if key_start < 0:
             return str
-        key_end=key_start+str[key_start:].find('\n')
+        key_end=key_start+str[key_start:].find('\n')+1
+        if key_end <= key_start:
+            return str
         str=str.replace(str[key_start:key_end],"",len(str))
+
 
 
 def read_pair(str,key):
@@ -55,19 +58,20 @@ def pre_read_config():
     players_nr=0
     fh = open("tennis.conf", "r")
     raw = fh.read()
+    raw=raw.replace('\r\n','\n',1000)
     raw=handle_comment_lines(raw)
     raw=raw.replace(' ','',1000)
     raw=raw.replace("/\n","//",1000)
     raw=raw.replace("\n\n","\n",1000)
     starting_week,t_pos=read_value(raw,"starting_week")
     ending_week,t_pos=read_value(raw,"ending_week")
-  
+
     if starting_week and ending_week:
         weeks=int(ending_week)-int(starting_week)+1
         if (weeks<0):
             weeks += 52
         base_week = int(starting_week)
-    pos = 0;
+    pos = 0
     group_nr=0
     while (True):
         x,t_pos=read_value(raw[pos:],"ranking_group")
@@ -75,8 +79,8 @@ def pre_read_config():
             break
         group_nr+=1
         pos+=t_pos
-    
-    pos = 0;
+
+    pos = 0
     players_nr=0
     while (True):
         x,t_pos=read_value(raw[pos:],"name")
@@ -84,14 +88,13 @@ def pre_read_config():
             break
         players_nr+=1
         pos+=t_pos
-  
-    pos = 0;
+
+    pos = 0
     timeslots=0
     x,t_pos=read_value(raw[pos:],"rule")
     if t_pos==-1:
         return
     timeslots=len(x)
- 
 
 
 def handle_rule(str,weeks,timeslots):
@@ -189,13 +192,13 @@ def read_config():
                 group_counter+=1
                 break
             last_group_end+=1
-            
+
             name,t_pos=read_value(raw[pos:],"name")
             if (t_pos==-1):
                 break
             pos+=t_pos
             player_counter+=1
-            
+
             rule,t_pos=read_value(raw[pos:],"rule")
             data = copy.deepcopy(handle_rule(rule,weeks,timeslots))
             players[player_counter]=(data,name,0)
@@ -209,8 +212,8 @@ def read_config():
             pos+=t_pos
 
             if not check_next_key(raw[pos:],"exception_week_rule"):
-                continue;
-            
+                continue
+
             x,t_pos=read_value(raw[pos:],"exception_week_rule")
             while t_pos>-1:
                 wnr,ts=getException(x)
@@ -219,9 +222,8 @@ def read_config():
                 players[player_counter]=(data,name,t)
                 pos+=t_pos
                 if not check_next_key(raw[pos:],"exception_week_rule"):
-                    break;
+                    break
                 x,t_pos=read_value(raw[pos:],"exception_week_rule")
-                
 
     while(True):
         x,t_pos=read_value(raw[pos:],"training_group")
@@ -239,7 +241,7 @@ def read_config():
             players[player_counter]=(data,name,0)
             pos+=t_pos
             if not check_next_key(raw[pos:],"exception_week_rule"):
-                continue;
+                continue
             x,t_pos=read_value(raw[pos:],"exception_week_rule")
             while t_pos>-1:
                 wnr,ts=getException(x)
@@ -248,7 +250,7 @@ def read_config():
                 players[player_counter]=(data,name,t)
                 pos+=t_pos
                 if not check_next_key(raw[pos:],"exception_week_rule"):
-                    break;
+                    break
                 x,t_pos=read_value(raw[pos:],"exception_week_rule")
 
 
@@ -286,7 +288,7 @@ def match_players(player1,player2,force,ranking):
     (slot2,name2,counter2)=player2
     for j in range(timeslots):
         for i in range(weeks):
-            if (slot1[i][j] == 'c' and slot2[i][j] == 'c' 
+            if (slot1[i][j] == 'c' and slot2[i][j] == 'c'
                 and result[i][j] == ""
                 and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week) :
                 result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1, name2)
@@ -423,6 +425,11 @@ def main():
     max_diff_between_most_and_least_plays=2
     max_cycles=500
 
+    print "max_cycles = "+str(max_cycles)
+    print "max_plays_per_week = "+str(max_play_per_week)
+    print "override max_unused_lots = "+str(max_slots_left)
+    print "max_diff = "+str(max_diff_between_most_and_least_plays)
+
     #read command line parameters
     for i in range(len(sys.argv)):
 
@@ -433,27 +440,27 @@ def main():
         val,t_pos =read_pair(sys.argv[i], "max_cycles")
         if val:
             max_cycles = int(val)
-            print "max_cycles = "+str(max_cycles)
+            print "override max_cycles = "+str(max_cycles)
             continue
 
         val,t_pos =read_pair(sys.argv[i], "max_plays_per_week")
         if val:
             max_play_per_week = int(val)
-            print "max_plays_per_week = "+str(max_play_per_week)
+            print "override max_plays_per_week = "+str(max_play_per_week)
             continue
 
         val,t_pos =read_pair(sys.argv[i], "max_unused_lots")
         if val:
             max_slots_left = int(val)
-            print "max_unused_lots = "+str(max_slots_left)
+            print "override max_unused_lots = "+str(max_slots_left)
             continue
 
         val,t_pos =read_pair(sys.argv[i], "max_diff")
         if val:
             max_diff_between_most_and_least_plays = int(val)
-            print "max_diff = "+str(max_diff_between_most_and_least_plays)
+            print "override max_diff = "+str(max_diff_between_most_and_least_plays)
             continue
-        
+
     global timeslots
     global weeks
     global raw
@@ -472,7 +479,7 @@ def main():
     global stored_result
     global stored_analyze
     global stored_players
- 
+
     sys.stdout.write("\nStarted:")
     sys.stdout.flush()
 
@@ -495,7 +502,7 @@ def main():
         players_orig=copy.deepcopy(players)
 
         result=copy.deepcopy(a)
-   
+
         #handle ranking matches
         handle_rankings()
 
@@ -533,12 +540,11 @@ def main():
             break
         else:
             cycles_used = cycles_used + 1
-        
+
     #after loop, prepare results
     result= copy.deepcopy(stored_result)
     players=copy.deepcopy(stored_players)
     diff_most_least, unused_slots, best_cycle = stored_analyze
-    
 
     #prezent the results
     print "\n\n\n\n\n\n\n\n"
