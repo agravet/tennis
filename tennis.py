@@ -322,7 +322,6 @@ def match_players(player1,player2,force,ranking):
                     and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != 'a'
                     and result[i][j] == ""
                     and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week):
-                    print(slot1[i][j])
                     result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1, name2+"(F)")
                     counter1 +=1
                     counter2 +=1
@@ -330,8 +329,6 @@ def match_players(player1,player2,force,ranking):
                     slot1[i][j] = mark
                     slot2=mark_related_timeslots(slot2,i,j)
                     slot2[i][j] = mark
-                    print(slot1[i][j])
-                    print(result[i][j])
                     return (slot1,name1,counter1),(slot2,name2,counter2),True
         for j in range(timeslots):
             for i in range(weeks):
@@ -430,6 +427,11 @@ def analyze():
 #####################################################################################
 
 def main():
+    global max_play_per_week
+    global max_slots_left
+    global max_diff_between_most_and_least_plays
+    global max_cycles
+
     global timeslots
     global weeks
     global raw
@@ -440,25 +442,30 @@ def main():
     global groups
     global tsdata
     global result
-    global max_play_per_week
-    global unused_slots_allowed
-    global max_diff_between_most_and_least_plays
-    global max_cycles
     global unused_slots
     global diff_most_least
     global ranking_failure_counter
     global ranking_failure_report
     global cycles_used
 
+    global stored_result
+    global stored_analyze
+    global stored_players
+ 
     sys.stdout.write("\nStarted:")
     sys.stdout.flush()
 
 
     cycles_used=0
     max_play_per_week = 1
-    unused_slots_allowed = 0
+    max_slots_left = 0
     max_diff_between_most_and_least_plays=2
-    max_cycles=1000
+    max_cycles=500
+
+    
+    best = 100
+    best_index = 0
+    best_cycle = 0
 
     while(True):
         timeslots = 0
@@ -467,17 +474,14 @@ def main():
         group_nr=0
         ranking_failure_counter = 0
         ranking_failure_report =""
-        max_diff_between_most_and_least_plays=5
-        max_cycles=10
 
         pre_read_config()
         read_config()
         players_orig=copy.deepcopy(players)
 
         result=copy.deepcopy(a)
-
+  
         handle_rankings()
-
         while (True):
             res = handle_training_by_best_effort_random(False)
             if res==False:
@@ -490,18 +494,26 @@ def main():
         unused_slots = count_unused_timeslots()
 
         diff_most_least = analyze()
-        if diff_most_least>=6:
-            sys.stdout.write('+')
-            sys.stdout.flush()
-        if diff_most_least<4:
+        if best > (diff_most_least + unused_slots):
+            best = (diff_most_least + unused_slots)
+            stored_result=copy.deepcopy(result)
+            stored_players=copy.deepcopy(players)
+            stored_analyze = diff_most_least, unused_slots, cycles_used
+            sys.stdout.write("("+str(diff_most_least)+"/"+str(unused_slots)+")")
+        else:
             sys.stdout.write('-')
-            sys.stdout.flush()
-        if diff_most_least <= max_diff_between_most_and_least_plays and unused_slots <= unused_slots_allowed:
+        sys.stdout.flush()
+
+        if diff_most_least <= max_diff_between_most_and_least_plays and unused_slots <= max_slots_left:
             break
         cycles_used = cycles_used + 1
         #print cycles
         if cycles_used > max_cycles:
             break
+        
+    result= copy.deepcopy(stored_result)
+    players=copy.deepcopy(stored_players)
+    diff_most_least, unused_slots, best_cycle = stored_analyze
     
 
     print "\n\n\n\n\n\n\n\n"
@@ -547,6 +559,7 @@ def main():
     print ranking_failure_report
     print "   unused slots:     "+str(unused_slots)
     print "   diff most/least:  "+str(diff_most_least)
+    print "   best cycle:       "+str(cycles_used)
     print "   cycles used:      "+str(cycles_used)
 
 main()
