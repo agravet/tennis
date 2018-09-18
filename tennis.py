@@ -586,5 +586,8 @@ def main():
     print "   diff most/least:  "+str(diff_most_least)
     print "   best cycle:       "+str(cycles_used)
     print "   cycles used:      "+str(cycles_used)
+    print ""
+    print " © Levente Varga 2018"
+
 
 main()
