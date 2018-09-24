@@ -3,6 +3,7 @@ import copy
 import random
 import sys
 import time
+import os
 
 
 def read_value(str,key):
@@ -95,6 +96,62 @@ def pre_read_config():
     if t_pos==-1:
         return
     timeslots=len(x)
+
+def read_ics_template_header():
+    fh = open("template_header", "r")
+    header = fh.read()
+    #print header
+    return header
+
+def read_ics_template_body():
+    fh = open("template_body", "r")
+    body = fh.read()
+    #print body
+    return body
+
+def convertDate(day,week_no, hour, min):
+    import datetime
+    if day == 'Sunday': day='-0'
+    if day == 'Monday': day='-1'
+    if day == 'Tuesday': day='-2'
+    if day == 'Wednesday': day='-3'
+    if day == 'Thursday': day='-4'
+    if day == 'Friday': day='-5'
+    if day == 'Saturday': day='-6'
+    t = datetime.datetime.strptime("2018-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
+    #print(t.__format__("%y%m%dT%H%M%S"))
+    return t.__format__("%Y%m%dT%H%M%S")
+
+def getTimeslotData(ts):
+    #tts ="Monday_19:30_Martinmaki_R"
+    tts=ts
+    loc=tts.find("_")
+    day=tts[:loc]
+    tts=tts[loc+1:]
+    loc=tts.find(":")
+    hour=tts[:loc]
+    tts=tts[loc+1:]
+    loc=tts.find("_")
+    min=tts[:loc]
+    tts=tts[loc+1:]
+    location=tts
+    #print day+"-"+hour+"-"+min+"-"+location
+    return day,hour,min,location
+
+def addToICS(ics,info,ts,week_no, desc):
+    day,hour,min,location = getTimeslotData(ts)
+    start_date=convertDate(day,week_no,hour,min)
+    end_date=convertDate(day,week_no,str(int(hour)+1),min)
+    temp_ics=read_ics_template_body()
+    temp_ics = temp_ics.replace("<START_DATE>",start_date,1)
+    temp_ics = temp_ics.replace("<END_DATE>",end_date,1)
+    temp_ics = temp_ics.replace("<TENNIS MATCH>",info,1)
+    temp_ics = temp_ics.replace("<TENNIS LOCATION>",location,1)
+    temp_ics = temp_ics.replace("<TENNIS DESC>",desc,1)
+    temp_ics = temp_ics.replace("<TENNIS ALARM DESC>",desc,1)
+    #print ics+temp_ics
+    return ics+temp_ics
+
 
 
 def handle_rule(str,weeks,timeslots):
@@ -425,6 +482,12 @@ def main():
     max_diff_between_most_and_least_plays=2
     max_cycles=500
 
+    #read_ics_template()
+    #convertDate('Monday', "2018-W39","19","30")
+    #getTimeslotData("")
+    #addToICS("","PLAYER1-PLAYER2","Monday_19:30_Martinmaki_Right_Court","35","Ranking Match")
+    #exit(0)
+
     print "max_cycles = "+str(max_cycles)
     print "max_plays_per_week = "+str(max_play_per_week)
     print "override max_unused_lots = "+str(max_slots_left)
@@ -572,9 +635,11 @@ def main():
                 text="   AVAILABLE FOR BOOKING  !!!!!!!!!!!!!!        "
             print '%-35s  %-40s' % (text, tsdata[j])
     print "======================================================================================================="
-
+    
+    os.system("rm -rf ics")
     for i in range(players_nr):
         slot,name,counter=players[i]
+        ics=read_ics_template_header()
         print "\n"
         print '=======  %s  plays %d times =============================================================' % (name, counter)
         for x in range(weeks):
@@ -582,6 +647,17 @@ def main():
             for y in range(timeslots):
                 if slot[x][y]=='R' or slot[x][y]=='T':
                     print '%-35s  %-40s' % (result[x][y], tsdata[y])
+                    if slot[x][y]=='R':
+                        ics=addToICS(ics,result[x][y], tsdata[y], str(x+base_week), "Ranking Match")
+                    else:
+                        ics=addToICS(ics,result[x][y], tsdata[y], str(x+base_week), "Training Match")
+        if not os.path.exists("ics"):
+            os.makedirs("ics")
+        f=open('./ics/'+name+".ics", 'w+')
+        f.write(ics)
+        f.close()
+        #print ics
+
     print '========================================================================================='
     print "\n\n\n"
 
