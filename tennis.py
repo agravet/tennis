@@ -109,6 +109,12 @@ def read_ics_template_body():
     #print body
     return body
 
+def read_ics_template_footer():
+    fh = open("template_footer", "r")
+    footer = fh.read()
+    #print body
+    return footer
+
 def convertDate(day,week_no, hour, min):
     import datetime
     if day == 'Sunday': day='-0'
@@ -138,7 +144,7 @@ def getTimeslotData(ts):
     #print day+"-"+hour+"-"+min+"-"+location
     return day,hour,min,location
 
-def addToICS(ics,info,ts,week_no, desc):
+def addToICS(info,ts,week_no, desc):
     day,hour,min,location = getTimeslotData(ts)
     start_date=convertDate(day,week_no,hour,min)
     end_date=convertDate(day,week_no,str(int(hour)+1),min)
@@ -150,7 +156,7 @@ def addToICS(ics,info,ts,week_no, desc):
     temp_ics = temp_ics.replace("<TENNIS DESC>",desc,1)
     temp_ics = temp_ics.replace("<TENNIS ALARM DESC>",desc,1)
     #print ics+temp_ics
-    return ics+temp_ics
+    return temp_ics
 
 
 
@@ -648,9 +654,11 @@ def main():
                 if slot[x][y]=='R' or slot[x][y]=='T':
                     print '%-35s  %-40s' % (result[x][y], tsdata[y])
                     if slot[x][y]=='R':
-                        ics=addToICS(ics,result[x][y], tsdata[y], str(x+base_week), "Ranking Match")
+                        ics+=addToICS(result[x][y], tsdata[y], str(x+base_week), "Ranking Match")
                     else:
-                        ics=addToICS(ics,result[x][y], tsdata[y], str(x+base_week), "Training Match")
+                        ics+=addToICS(result[x][y], tsdata[y], str(x+base_week), "Training Match")
+        ics+=read_ics_template_footer()
+        ics=ics.replace(' ','',1000)
         if not os.path.exists("ics"):
             os.makedirs("ics")
         f=open('./ics/'+name+".ics", 'w+')
