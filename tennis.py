@@ -270,7 +270,7 @@ def read_config():
                 timeslots=tlength
             else:
                 if tlength != timeslots:
-                    print "timeslot length error in config, "+name
+                    print ("timeslot length error in config, " + name)
                     exit(1)
             pos+=t_pos
 
@@ -494,40 +494,40 @@ def main():
     #addToICS("","PLAYER1-PLAYER2","Monday_19:30_Martinmaki_Right_Court","35","Ranking Match")
     #exit(0)
 
-    print "max_cycles = "+str(max_cycles)
-    print "max_plays_per_week = "+str(max_play_per_week)
-    print "override max_unused_lots = "+str(max_slots_left)
-    print "max_diff = "+str(max_diff_between_most_and_least_plays)
+    print ("max_cycles = "+str(max_cycles))
+    print ("max_plays_per_week = "+str(max_play_per_week))
+    print ("override max_unused_lots = "+str(max_slots_left))
+    print ("max_diff = "+str(max_diff_between_most_and_least_plays))
 
     #read command line parameters
     for i in range(len(sys.argv)):
 
         if sys.argv[i]=="help" or sys.argv[i]=="-h" or sys.argv[i]=="--help":
-            print "Usage:"
-            print "python "+sys.argv[0]+" max_cycles=500 max_plays_per_week=2 max_unused_lots=3 max_diff=2"
+            print ("Usage:")
+            print ("python "+sys.argv[0]+" max_cycles=500 max_plays_per_week=2 max_unused_lots=3 max_diff=2")
 
         val,t_pos =read_pair(sys.argv[i], "max_cycles")
         if val:
             max_cycles = int(val)
-            print "override max_cycles = "+str(max_cycles)
+            print ("override max_cycles = "+str(max_cycles))
             continue
 
         val,t_pos =read_pair(sys.argv[i], "max_plays_per_week")
         if val:
             max_play_per_week = int(val)
-            print "override max_plays_per_week = "+str(max_play_per_week)
+            print ("override max_plays_per_week = "+str(max_play_per_week))
             continue
 
         val,t_pos =read_pair(sys.argv[i], "max_unused_lots")
         if val:
             max_slots_left = int(val)
-            print "override max_unused_lots = "+str(max_slots_left)
+            print ("override max_unused_lots = "+str(max_slots_left))
             continue
 
         val,t_pos =read_pair(sys.argv[i], "max_diff")
         if val:
             max_diff_between_most_and_least_plays = int(val)
-            print "override max_diff = "+str(max_diff_between_most_and_least_plays)
+            print ("override max_diff = "+str(max_diff_between_most_and_least_plays))
             continue
 
     global timeslots
@@ -616,43 +616,43 @@ def main():
     diff_most_least, unused_slots, best_cycle = stored_analyze
 
     #prezent the results
-    print "\n\n\n\n\n\n\n\n"
-    print "--------------------------------------------------------------------------------------------------------"
+    print ("\n\n\n\n\n\n\n\n")
+    print ("--------------------------------------------------------------------------------------------------------")
     for i in range(group_nr):
         a,b=groups[i]
-        print "========= ranking group: "+str(i)+"  ==============================================================="
+        print ("========= ranking group: "+str(i)+"  ===============================================================")
         for j in range(a,b+1):
             slot,name,counter=players[j]
-            print '%-20s  %-20s' % (name,"?????")
-    print "========= training group: ================================================================="
+            print ('%-20s  %-20s' % (name,"?????"))
+    print ("========= training group: =================================================================")
     for i in range(b,players_nr):
         slot,name,counter=players[i]
-        print '%-20s  %-20s' % (name,"?????")
-    print "==========================================================================================="
+        print ('%-20s  %-20s' % (name,"?????"))
+    print ("===========================================================================================")
 
-    print "\n\n\n"
+    print ("\n\n\n")
 
     for i in range(weeks):
-        print "========= week: "+str(i+base_week)+"  ==============================================================="
+        print ("========= week: "+str(i+base_week)+"  ===============================================================")
         for j in range(timeslots):
             if result[i][j]:
                 text=result[i][j]
             else:
                 text="   AVAILABLE FOR BOOKING  !!!!!!!!!!!!!!        "
-            print '%-35s  %-40s' % (text, tsdata[j])
-    print "======================================================================================================="
+            print ('%-35s  %-40s' % (text, tsdata[j]))
+    print ("=======================================================================================================")
     
     os.system("rm -rf ics")
     for i in range(players_nr):
         slot,name,counter=players[i]
         ics=read_ics_template_header()
-        print "\n"
-        print '=======  %s  plays %d times =============================================================' % (name, counter)
+        print ("\n")
+        print ('=======  %s  plays %d times =============================================================' % (name, counter))
         for x in range(weeks):
-            print '------------------------------------------------------------------------------week nr: %d:' % (x+base_week)
+            print ('------------------------------------------------------------------------------week nr: %d:' % (x+base_week))
             for y in range(timeslots):
                 if slot[x][y]=='R' or slot[x][y]=='T':
-                    print '%-35s  %-40s' % (result[x][y], tsdata[y])
+                    print ('%-35s  %-40s' % (result[x][y], tsdata[y]))
                     if slot[x][y]=='R':
                         ics+=addToICS(result[x][y], tsdata[y], str(x+base_week), "Ranking Match")
                     else:
@@ -666,18 +666,18 @@ def main():
         f.close()
         #print ics
 
-    print '========================================================================================='
-    print "\n\n\n"
+    print ('=========================================================================================')
+    print ("\n\n\n")
 
-    print "Report: "
-    print "   ranking failures: "+str(ranking_failure_counter)
-    print ranking_failure_report
-    print "   unused slots:     "+str(unused_slots)
-    print "   diff most/least:  "+str(diff_most_least)
-    print "   best cycle:       "+str(cycles_used)
-    print "   cycles used:      "+str(cycles_used)
-    print ""
-    print " © Levente Varga 2018"
+    print ("Report: ")
+    print ("   ranking failures: "+str(ranking_failure_counter))
+    print (ranking_failure_report)
+    print ("   unused slots:     "+str(unused_slots))
+    print ("   diff most/least:  "+str(diff_most_least))
+    print ("   best cycle:       "+str(cycles_used))
+    print ("   cycles used:      "+str(cycles_used))
+    print ("")
+    print (" © Levente Varga 2018")
 
 
 main()
