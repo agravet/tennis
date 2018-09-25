@@ -221,6 +221,7 @@ def read_config():
     global groups
     global tsdata
     tsdata = [""]*timeslots
+    #print (group_nr)
     groups=[0]*group_nr
     player_counter=-1
     players = [0] * players_nr
@@ -264,7 +265,7 @@ def read_config():
 
             rule,t_pos=read_value(raw[pos:],"rule")
             data = copy.deepcopy(handle_rule(rule,weeks,timeslots))
-            players[player_counter]=(data,name,0)
+            players[player_counter]=(data,name,0,"")
             tlength = len(rule)
             if timeslots == 0:
                 timeslots=tlength
@@ -274,19 +275,32 @@ def read_config():
                     exit(1)
             pos+=t_pos
 
-            if not check_next_key(raw[pos:],"exception_week_rule"):
-                continue
-
-            x,t_pos=read_value(raw[pos:],"exception_week_rule")
-            while t_pos>-1:
-                wnr,ts=getException(x)
-                (data,name,t)=players[player_counter]
-                data=copy.deepcopy(handle_exception(data,ts,wnr))
-                players[player_counter]=(data,name,t)
-                pos+=t_pos
-                if not check_next_key(raw[pos:],"exception_week_rule"):
-                    break
+            if check_next_key(raw[pos:],"exception_week_rule"):
                 x,t_pos=read_value(raw[pos:],"exception_week_rule")
+                while t_pos>-1:
+                    wnr,ts=getException(x)
+                    #print name+" "+"exception_week_rule: "+x
+                    (data,name,t,z)=players[player_counter]
+                    data=copy.deepcopy(handle_exception(data,ts,wnr))
+                    players[player_counter]=(data,name,t,z)
+                    pos+=t_pos
+                    if not check_next_key(raw[pos:],"exception_week_rule"):
+                        break
+                    x,t_pos=read_value(raw[pos:],"exception_week_rule")
+
+
+
+            if check_next_key(raw[pos:],"incompatible_with"):
+                x,t_pos=read_value(raw[pos:],"incompatible_with")
+                while t_pos>-1:
+                    incomp,t_pos=read_value(raw[pos:],"incompatible_with")
+                    #print name+" "+"incomaptible_with:"+x
+                    (data,name,t,z)=players[player_counter]
+                    players[player_counter] = (data,name,t,x)
+                    pos+=t_pos
+                    if not check_next_key(raw[pos:],"incompatible_with"):
+                        break
+                    x,t_pos=read_value(raw[pos:],"incompatible_with")
 
     while(True):
         x,t_pos=read_value(raw[pos:],"training_group")
@@ -301,20 +315,32 @@ def read_config():
             player_counter+=1
             rule,t_pos=read_value(raw[pos:],"rule")
             data = copy.deepcopy(handle_rule(rule,weeks,timeslots))
-            players[player_counter]=(data,name,0)
+            players[player_counter]=(data,name,0,z)
             pos+=t_pos
-            if not check_next_key(raw[pos:],"exception_week_rule"):
-                continue
-            x,t_pos=read_value(raw[pos:],"exception_week_rule")
-            while t_pos>-1:
-                wnr,ts=getException(x)
-                (data,name,t)=players[player_counter]
-                data=copy.deepcopy(handle_exception(data,ts,wnr))
-                players[player_counter]=(data,name,t)
-                pos+=t_pos
-                if not check_next_key(raw[pos:],"exception_week_rule"):
-                    break
+
+            if check_next_key(raw[pos:],"exception_week_rule"):
                 x,t_pos=read_value(raw[pos:],"exception_week_rule")
+                while t_pos>-1:
+                    wnr,ts=getException(x)
+                    (data,name,t,z)=players[player_counter]
+                    data=copy.deepcopy(handle_exception(data,ts,wnr))
+                    players[player_counter]=(data,name,t,z)
+                    pos+=t_pos
+                    if not check_next_key(raw[pos:],"exception_week_rule"):
+                        break
+                    x,t_pos=read_value(raw[pos:],"exception_week_rule")
+
+            if check_next_key(raw[pos:],"incompatible_with"):
+                x,t_pos=read_value(raw[pos:],"incompatible_with")
+                while t_pos>-1:
+                    incomp,t_pos=read_value(raw[pos:],"incompatible_with")
+                    #print name+" "+"incomaptible_with:"+x
+                    (data,name,t,z)=players[player_counter]
+                    players[player_counter] = (data,name,t,x)
+                    pos+=t_pos
+                    if not check_next_key(raw[pos:],"incompatible_with"):
+                        break
+                    x,t_pos=read_value(raw[pos:],"incompatible_with")
 
 
 
@@ -347,12 +373,15 @@ def match_players(player1,player2,force,ranking):
     else:
         comments=" "
         mark="T"
-    (slot1,name1,counter1)=player1
-    (slot2,name2,counter2)=player2
+    (slot1,name1,counter1,incomp1)=player1
+    (slot2,name2,counter2,incomp2)=player2
+    #if incomp1: print name1 + " with: "+ incomp1
+    #if incomp2: print name2 + " with: "+ incomp2
     for j in range(timeslots):
         for i in range(weeks):
             if (slot1[i][j] == 'c' and slot2[i][j] == 'c'
                 and result[i][j] == ""
+                and incomp1 != name2 and incomp2 != name1
                 and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week) :
                 result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1, name2)
                 counter1 +=1
@@ -361,7 +390,7 @@ def match_players(player1,player2,force,ranking):
                 slot1[i][j] = mark
                 slot2=mark_related_timeslots(slot2,i,j)
                 slot2[i][j] = mark
-                return (slot1,name1,counter1),(slot2,name2,counter2),True
+                return (slot1,name1,counter1,incomp1),(slot2,name2,counter2,incomp2),True
     #print name1+"-"+name2+" no match found"
     if force==True:
         for j in range(timeslots):
@@ -369,6 +398,7 @@ def match_players(player1,player2,force,ranking):
                 if (slot1[i][j] == 'c'
                     and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != 'a'
                     and result[i][j] == ""
+                    and incomp1 != name2 and incomp2 != name1
                     and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week):
                     result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1, name2+"(F)")
                     counter1 +=1
@@ -377,12 +407,13 @@ def match_players(player1,player2,force,ranking):
                     slot1[i][j] = mark
                     slot2=mark_related_timeslots(slot2,i,j)
                     slot2[i][j] = mark
-                    return (slot1,name1,counter1),(slot2,name2,counter2),True
+                    return (slot1,name1,counter1,incomp1),(slot2,name2,counter2,incomp2),True
         for j in range(timeslots):
             for i in range(weeks):
                 if (slot2[i][j] == 'c'
                     and slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != 'a'
                     and result[i][j] == ""
+                    and incomp1 != name2 and incomp2 != name1
                     and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week):
                     result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1+"(F)", name2)
                     counter1 +=1
@@ -391,12 +422,13 @@ def match_players(player1,player2,force,ranking):
                     slot1[i][j] = mark
                     slot2=mark_related_timeslots(slot2,i,j)
                     slot2[i][j] = mark
-                    return (slot1,name1,counter1),(slot2,name2,counter2),True
+                    return (slot1,name1,counter1,incomp1),(slot2,name2,counter2,incomp2),True
         for j in range(timeslots):
             for i in range(weeks):
                 if (slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != 'a'
                     and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != 'a'
                     and result[i][j] == ""
+                    and incomp1 != name2 and incomp2 != name1
                     and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week):
                     result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1+"(F)", name2+"(F)")
                     counter1 +=1
@@ -405,10 +437,10 @@ def match_players(player1,player2,force,ranking):
                     slot1[i][j] = mark
                     slot2=mark_related_timeslots(slot2,i,j)
                     slot2[i][j] = mark
-                    return (slot1,name1,counter1),(slot2,name2,counter2),True
+                    return (slot1,name1,counter1,incomp1),(slot2,name2,counter2,incomp2),True
     #if ranking==True:
     #    print comments+name1+" - "+name2+" FAILURE:"
-    return (slot1,name1,counter1),(slot2,name2,counter2),False
+    return (slot1,name1,counter1,incomp1),(slot2,name2,counter2,incomp2),False
 
 
 def handle_group(first,last):
@@ -418,13 +450,14 @@ def handle_group(first,last):
         for j in range(i+1, last+1):
             players[i],players[j],res = match_players(players[i],players[j],True,True)
             if res == False:
-                slot1,name1,counter1=players[i]
-                slot2,name2,counter2=players[j]
+                slot1,name1,counter1,incomp1=players[i]
+                slot2,name2,counter2,incomp2=players[j]
                 ranking_failure_report += "# Ranking failure between: "+name1+" - "+name2 + "\n"
                 ranking_failure_counter +=1
 
 
 def handle_rankings():
+    #print groups
     for i in range(group_nr):
         a,b=groups[i]
         handle_group(a,b)
@@ -437,10 +470,10 @@ def handle_training_by_best_effort_random(mode):
         i=random.randint(0, players_nr-1)
         j=random.randint(0, players_nr-1)
         if i!=j:
-            slot1,name1,counter1=players[i]
+            slot1,name1,counter1,incomp1=players[i]
             if counter1 > limit:
                 continue
-            slot2,name2,counter2=players[j]
+            slot2,name2,counter2,incomp2=players[j]
             if counter2 > limit:
                 continue
             players[i],players[j],res = match_players(players[i],players[j],mode,False)
@@ -463,7 +496,7 @@ def analyze():
     min=1000
     max=0
     for i in range(0,players_nr):
-        slot,name,counter=players[i]
+        slot,name,counter,incomp=players[i]
         if min >  counter and counter > 0:
             min = counter
         if max <  counter:
@@ -622,11 +655,11 @@ def main():
         a,b=groups[i]
         print ("========= ranking group: "+str(i)+"  ===============================================================")
         for j in range(a,b+1):
-            slot,name,counter=players[j]
+            slot,name,counter,incomp=players[j]
             print ('%-20s  %-20s' % (name,"?????"))
     print ("========= training group: =================================================================")
     for i in range(b,players_nr):
-        slot,name,counter=players[i]
+        slot,name,counter,incomp=players[i]
         print ('%-20s  %-20s' % (name,"?????"))
     print ("===========================================================================================")
 
@@ -644,7 +677,7 @@ def main():
     
     os.system("rm -rf ics")
     for i in range(players_nr):
-        slot,name,counter=players[i]
+        slot,name,counter,incomp=players[i]
         ics=read_ics_template_header()
         print ("\n")
         print ('=======  %s  plays %d times =============================================================' % (name, counter))

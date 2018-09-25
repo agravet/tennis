@@ -1,7 +1,7 @@
 Backlog:
 =======
 
-- add user incompatibility:
+- add user incompatibility: DONE for 1 user
 ---------------------------
     name=LAITAMAKI
         rule=ccccacnnnaa
