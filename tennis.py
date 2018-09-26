@@ -210,6 +210,14 @@ def handleTimeslotDetails(str):
         data_start=data_end+2
 
 
+def isIncluded(name, list, elem):
+    for i in range(len(list)):
+        if list[i] == elem:
+            #print "for: "+name+" against "+elem+" in list: "+str(list)
+            return True
+    return False
+
+
 def read_config():
     global timeslots
     global weeks
@@ -265,7 +273,7 @@ def read_config():
 
             rule,t_pos=read_value(raw[pos:],"rule")
             data = copy.deepcopy(handle_rule(rule,weeks,timeslots))
-            players[player_counter]=(data,name,0,"")
+            players[player_counter]=(data,name,0,[])
             tlength = len(rule)
             if timeslots == 0:
                 timeslots=tlength
@@ -279,7 +287,6 @@ def read_config():
                 x,t_pos=read_value(raw[pos:],"exception_week_rule")
                 while t_pos>-1:
                     wnr,ts=getException(x)
-                    #print name+" "+"exception_week_rule: "+x
                     (data,name,t,z)=players[player_counter]
                     data=copy.deepcopy(handle_exception(data,ts,wnr))
                     players[player_counter]=(data,name,t,z)
@@ -293,10 +300,11 @@ def read_config():
             if check_next_key(raw[pos:],"incompatible_with"):
                 x,t_pos=read_value(raw[pos:],"incompatible_with")
                 while t_pos>-1:
-                    incomp,t_pos=read_value(raw[pos:],"incompatible_with")
-                    #print name+" "+"incomaptible_with:"+x
                     (data,name,t,z)=players[player_counter]
-                    players[player_counter] = (data,name,t,x)
+                    y=copy.deepcopy(z)
+                    y.append(x)
+                    #print name+" "+"incomaptible_with:"+str(z)
+                    players[player_counter] = (data,name,t,y)
                     pos+=t_pos
                     if not check_next_key(raw[pos:],"incompatible_with"):
                         break
@@ -333,10 +341,11 @@ def read_config():
             if check_next_key(raw[pos:],"incompatible_with"):
                 x,t_pos=read_value(raw[pos:],"incompatible_with")
                 while t_pos>-1:
-                    incomp,t_pos=read_value(raw[pos:],"incompatible_with")
-                    #print name+" "+"incomaptible_with:"+x
                     (data,name,t,z)=players[player_counter]
-                    players[player_counter] = (data,name,t,x)
+                    y=copy.deepcopy(z)
+                    y.append(x)
+                    #print name+" "+"incomaptible_with:"+str(z)
+                    players[player_counter] = (data,name,t,y)
                     pos+=t_pos
                     if not check_next_key(raw[pos:],"incompatible_with"):
                         break
@@ -375,13 +384,13 @@ def match_players(player1,player2,force,ranking):
         mark="T"
     (slot1,name1,counter1,incomp1)=player1
     (slot2,name2,counter2,incomp2)=player2
-    #if incomp1: print name1 + " with: "+ incomp1
-    #if incomp2: print name2 + " with: "+ incomp2
+    if name1 == name2:
+        return (slot1,name1,counter1,incomp1),(slot2,name2,counter2,incomp2),False
     for j in range(timeslots):
         for i in range(weeks):
             if (slot1[i][j] == 'c' and slot2[i][j] == 'c'
                 and result[i][j] == ""
-                and incomp1 != name2 and incomp2 != name1
+                and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                 and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week) :
                 result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1, name2)
                 counter1 +=1
@@ -398,7 +407,7 @@ def match_players(player1,player2,force,ranking):
                 if (slot1[i][j] == 'c'
                     and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != 'a'
                     and result[i][j] == ""
-                    and incomp1 != name2 and incomp2 != name1
+                    and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                     and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week):
                     result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1, name2+"(F)")
                     counter1 +=1
@@ -413,7 +422,7 @@ def match_players(player1,player2,force,ranking):
                 if (slot2[i][j] == 'c'
                     and slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != 'a'
                     and result[i][j] == ""
-                    and incomp1 != name2 and incomp2 != name1
+                    and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                     and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week):
                     result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1+"(F)", name2)
                     counter1 +=1
@@ -428,7 +437,7 @@ def match_players(player1,player2,force,ranking):
                 if (slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != 'a'
                     and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != 'a'
                     and result[i][j] == ""
-                    and incomp1 != name2 and incomp2 != name1
+                    and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                     and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week):
                     result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1+"(F)", name2+"(F)")
                     counter1 +=1
@@ -452,7 +461,12 @@ def handle_group(first,last):
             if res == False:
                 slot1,name1,counter1,incomp1=players[i]
                 slot2,name2,counter2,incomp2=players[j]
-                ranking_failure_report += "# Ranking failure between: "+name1+" - "+name2 + "\n"
+                reason=""
+                if isIncluded(name1,incomp1,name2) or isIncluded(name2,incomp2,name1):
+                    reason = " due to incompatibilty"
+                else:
+                    reason = " due to strict rules"
+                ranking_failure_report += "    # Ranking failure between: "+name1+" - "+name2 + reason +"\n"
                 ranking_failure_counter +=1
 
 
@@ -519,7 +533,7 @@ def main():
     max_play_per_week = 1
     max_slots_left = 0
     max_diff_between_most_and_least_plays=2
-    max_cycles=500
+    max_cycles=250
 
     #read_ics_template()
     #convertDate('Monday', "2018-W39","19","30")
@@ -537,7 +551,7 @@ def main():
 
         if sys.argv[i]=="help" or sys.argv[i]=="-h" or sys.argv[i]=="--help":
             print ("Usage:")
-            print ("python "+sys.argv[0]+" max_cycles=500 max_plays_per_week=2 max_unused_lots=3 max_diff=2")
+            print ("python "+sys.argv[0]+" max_cycles=250 max_plays_per_week=2 max_unused_lots=3 max_diff=2")
 
         val,t_pos =read_pair(sys.argv[i], "max_cycles")
         if val:
