@@ -1,14 +1,6 @@
 Backlog:
 =======
 
-- add user incompatibility: DONE for 1 user
----------------------------
-    name=LAITAMAKI
-        rule=ccccacnnnaa
-        avoid=RAEVUORI
-    name=RAEVUORI
-        rule=nccncnnnnaa
-
 - add email support
 -------------------
   1) player email / phone nr to be added to configuration
@@ -20,3 +12,15 @@ Backlog:
 - automatic result handling
 ---------------------------
     TBD
+
+
+Complete:
+=========
+
+- add user incompatibility: DONE for 1 user
+---------------------------
+    name=LAITAMAKI
+        rule=ccccacnnnaa
+        avoid=RAEVUORI
+    name=RAEVUORI
+        rule=nccncnnnnaa
