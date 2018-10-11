@@ -1,6 +1,23 @@
 Backlog:
 =======
 
+- check if why some slot are left empty(if problem real at all)
+---------------------------------------------------------------
+
+- add generic exception rule
+----------------------------
+eg. public holidays when tennis court is closed
+
+
+- add timeslot price tag
+------------------------
+for payment calculation
+
+
+- add payment report
+--------------------
+
+
 - add email support
 -------------------
   1) player email / phone nr to be added to configuration
@@ -14,7 +31,7 @@ Backlog:
     TBD
 
 
-Complete:
+Completed:
 =========
 
 - add user incompatibility: DONE for 1 user
