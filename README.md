@@ -4,15 +4,9 @@ Backlog:
 - check if why some slot are left empty(if problem real at all)
 ---------------------------------------------------------------
 
-- add generic exception rule
-----------------------------
-eg. public holidays when tennis court is closed
-
-
 - add timeslot price tag
 ------------------------
 for payment calculation
-
 
 - add payment report
 --------------------
@@ -33,6 +27,13 @@ for payment calculation
 
 Completed:
 =========
+- generic holiday rules added
+---------------------
+    special_timeslots=holidays
+        # rule=<week number>,<timeslot option 1>...
+        # x=no restriction, s=available for special booking, l=closed
+        sp=39,xxxssssssll
+        sp=42,lllllllllll
 
 - add user incompatibility: DONE for 1 user
 ---------------------------

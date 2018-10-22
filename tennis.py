@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+        # -*- coding: utf-8 -*-
 import copy
 import random
 import sys
@@ -187,7 +187,10 @@ def handle_exception(slot,str,weeknr):
     global base_week
     ts = [0] * len(str)
     for i in range(len(str)):
-        ts[i]=str[i]
+        if str[i]!='x':
+            ts[i]=str[i]
+        else:
+            ts[i]=slot[int(weeknr)-base_week][i]
     slot[int(weeknr)-base_week]=copy.deepcopy(ts)
     return slot
 
@@ -228,6 +231,7 @@ def read_config():
     global a
     global groups
     global tsdata
+    global result
     tsdata = [""]*timeslots
     #print (group_nr)
     groups=[0]*group_nr
@@ -247,11 +251,15 @@ def read_config():
     raw=raw.replace("/\n","//",1000)
     raw=raw.replace("\n\n","\n",1000)
     ts,t_pos=read_value(raw,"timeslots")
+
+    result=copy.deepcopy(a)
+
     handleTimeslotDetails(ts)
     pos=t_pos
     last_group_start=0
     last_group_end=0
     group_counter=0
+
     while(True):
         gr_name,t_pos=read_value(raw[pos:],"ranking_group")
         if t_pos<0:
@@ -350,6 +358,28 @@ def read_config():
                     if not check_next_key(raw[pos:],"incompatible_with"):
                         break
                     x,t_pos=read_value(raw[pos:],"incompatible_with")
+    #handle holidays
+    t_pos=0
+    pos=t_pos
+    ts,t_pos=read_value(raw[pos:],"special_timeslots")
+    pos+=t_pos
+    x,t_pos=read_value(raw[pos:],"sp")
+    while t_pos>-1:
+        wnr,ts=getException(x)
+        for k in range (len(ts)):
+            if ts[k] == 'l':
+                result[int(wnr)-base_week][k]=" +++++ HOLIDAY: CLOSED +++++++++                "
+            if ts[k] == 's':
+                result[int(wnr)-base_week][k]=" +++++ HOLIDAY: AVAILABLE ++++++                "
+
+        for i in range(len(players)):
+            (data,name,t,z)=players[i]
+            data=copy.deepcopy(handle_exception(data,ts,wnr))
+            players[i]=(data,name,t,z)
+        pos+=t_pos
+        x,t_pos=read_value(raw[pos:],"sp")
+
+
 
 
 
@@ -617,7 +647,7 @@ def main():
         read_config()
         players_orig=copy.deepcopy(players)
 
-        result=copy.deepcopy(a)
+        #result=copy.deepcopy(a)
 
         #handle ranking matches
         handle_rankings()
@@ -630,7 +660,7 @@ def main():
 
         #handle training matches, forcinging player options
         while (True):
-            res = handle_training_by_best_effort_random(True)
+            res = handle_training_by_best_effort_random(False)
             if res==False:
                 break
 
@@ -685,10 +715,10 @@ def main():
             if result[i][j]:
                 text=result[i][j]
             else:
-                text="   AVAILABLE FOR BOOKING  !!!!!!!!!!!!!!        "
+                text=" +++++ UNUSED : AVAILABLE ++++++                "
             print ('%-35s  %-40s' % (text, tsdata[j]))
     print ("=======================================================================================================")
-    
+
     os.system("rm -rf ics")
     for i in range(players_nr):
         slot,name,counter,incomp=players[i]
