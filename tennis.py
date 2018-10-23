@@ -570,16 +570,15 @@ def main():
     global max_cycles
 
     #default settings
-    max_play_per_week = 1
+    max_play_per_week = 2
     max_slots_left = 0
     max_diff_between_most_and_least_plays=2
-    max_cycles=250
+    max_cycles=500
 
-    #read_ics_template()
-    #convertDate('Monday', "2018-W39","19","30")
-    #getTimeslotData("")
-    #addToICS("","PLAYER1-PLAYER2","Monday_19:30_Martinmaki_Right_Court","35","Ranking Match")
-    #exit(0)
+    if len(sys.argv) > 1 and (sys.argv[1]=="help" or sys.argv[1]=="-h" or sys.argv[1]=="--help"):
+            print ("Usage:")
+            print ("python "+sys.argv[0]+" max_cycles=1000 max_plays_per_week=2 max_unused_lots=0 max_diff=2")
+            exit(0)
 
     print ("max_cycles = "+str(max_cycles))
     print ("max_plays_per_week = "+str(max_play_per_week))
@@ -588,11 +587,6 @@ def main():
 
     #read command line parameters
     for i in range(len(sys.argv)):
-
-        if sys.argv[i]=="help" or sys.argv[i]=="-h" or sys.argv[i]=="--help":
-            print ("Usage:")
-            print ("python "+sys.argv[0]+" max_cycles=250 max_plays_per_week=2 max_unused_lots=3 max_diff=2")
-
         val,t_pos =read_pair(sys.argv[i], "max_cycles")
         if val:
             max_cycles = int(val)
@@ -670,17 +664,16 @@ def main():
                 break
 
         #handle training matches, forcinging player options
-        while (True):
-            res = handle_training_by_best_effort_random(False)
-            if res==False:
-                break
+        #while (True):
+        #    res = handle_training_by_best_effort_random(True)
+        #    if res==False:
+        #        break
 
         #collect statitistical data
         unused_slots = count_unused_timeslots()
         diff_most_least = analyze()
 
         #store best result so far
-        
         if best > (diff_most_least + unused_slots):
             best = (diff_most_least + unused_slots)
             stored_result=copy.deepcopy(result)
@@ -689,7 +682,7 @@ def main():
             sys.stdout.write("("+str(diff_most_least)+"/"+str(unused_slots)+")")
         else:
             counter = counter + 1
-            if (counter % 100) == 0 :
+            if (counter % 10) == 0 :
                 sys.stdout.write('-')
         sys.stdout.flush()
 
@@ -707,44 +700,48 @@ def main():
     diff_most_least, unused_slots, best_cycle = stored_analyze
 
     #prezent the results
-    print ("\n\n\n\n\n\n\n\n")
-    print ("--------------------------------------------------------------------------------------------------------")
+    to_print = ''
+    common_part_print=''
+    common_part_print = common_part_print +  ("\n\n\n\n\n\n\n\n")
+    common_part_print = common_part_print +  ("--------------------------------------------------------------------------------------------------------") + "\n"
     for i in range(group_nr):
         a,b=groups[i]
-        print ("========= ranking group: "+str(i)+"  ===============================================================")
+        common_part_print = common_part_print +  ("========= ranking group: "+str(i)+"  ===============================================================") + "\n"
         for j in range(a,b+1):
             slot,name,counter,incomp,e,f=players[j]
-            print ('%-20s  %-20s   %-20s' % (name,e,f))
-    print ("========= training group: =================================================================")
+            common_part_print = common_part_print +  ('%-20s  %-40s  %-20s' % (name,e,f)) + "\n"
+    common_part_print = common_part_print +  ("========= training group: =================================================================") + "\n"
     for i in range(b+1,players_nr):
         slot,name,counter,incomp,e,f=players[i]
-        print ('%-20s  %-20s   %-20s' % (name,e,f))
-    print ("===========================================================================================")
+        common_part_print = common_part_print +  ('%-20s  %-40s  %-20s' % (name,e,f)) + "\n"
+    common_part_print = common_part_print +  ("===========================================================================================") + "\n"
 
-    print ("\n\n\n")
-
+    common_part_print = common_part_print +  ("\n\n\n") + "\n"
     for i in range(weeks):
-        print ("========= week: "+str(i+base_week)+"  ===============================================================")
+        common_part_print = common_part_print + ("========= week: "+str(i+base_week)+"  ===============================================================") + "\n"
         for j in range(timeslots):
             if result[i][j]:
                 text=result[i][j]
             else:
                 text=" +++++ UNUSED : AVAILABLE ++++++                "
-            print ('%-35s  %-40s' % (text, tsdata[j]))
-    print ("=======================================================================================================")
+            common_part_print = common_part_print +  ('%-35s  %-40s' % (text, tsdata[j])) + "\n"
+    common_part_print = common_part_print + ("=======================================================================================================") + "\n"
 
-    os.system("rm -rf ics")
+    to_print = to_print + common_part_print
+
+    os.system("rm -rf out")
     for i in range(players_nr):
+        own_schedule_print=''
         price = 0
         slot,name,counter,incomp,e,f=players[i]
         ics=read_ics_template_header()
-        print ("\n")
-        print ('=======  %s  plays %d times =============================================================' % (name, counter))
+        own_schedule_print = own_schedule_print + ("\n")
+        own_schedule_print = own_schedule_print + ('=======  %s  plays %d times =============================================================' % (name, counter)) + "\n"
         for x in range(weeks):
-            print ('w%d:' % (x+base_week))
+            own_schedule_print = own_schedule_print + ('w%d:' % (x+base_week)) + "\n"
             for y in range(timeslots):
                 if slot[x][y]=='R' or slot[x][y]=='T':
-                    print ('%-35s  %-40s' % (result[x][y], tsdata[y]))
+                    own_schedule_print = own_schedule_print + ('%-35s  %-40s' % (result[x][y], tsdata[y])) + "\n"
                     if slot[x][y]=='R':
                         ics+=addToICS(result[x][y], tsdata[y], str(x+base_week), "Ranking Match")
                     else:
@@ -752,45 +749,56 @@ def main():
                     #price += float(price_list[y])
         ics+=read_ics_template_footer()
         ics=ics.replace(' ','',1000)
-        if not os.path.exists("ics"):
-            os.makedirs("ics")
-        f=open('./ics/'+name+".ics", 'w+')
+        if not os.path.exists("out"):
+            os.makedirs("out")
+        f=open('./out/'+name+".ics", 'w+')
         f.write(ics)
         f.close()
         #print ics
-        print('\n-Payments:---------------------------------------------------')
+        own_schedule_print = own_schedule_print +('\n-Payments:---------------------------------------------------') + "\n"
         for x in range(weeks):
             #print ('%0d:' % (x+base_week))
-            sys.stdout.write('w'+str((x+base_week))+': ')
-            sys.stdout.flush()
+            own_schedule_print = own_schedule_print +('w'+str((x+base_week))+': ')
             for y in range(timeslots):
                 if slot[x][y]=='R' or slot[x][y]=='T':
-                    sys.stdout.write(price_list[y])
+                    own_schedule_print = own_schedule_print +(price_list[y])
                     price += float(price_list[y])
                 else:
-                    sys.stdout.write(' -- ')
-                sys.stdout.write(' ')
-                sys.stdout.flush()
-            sys.stdout.write('\n')
-            sys.stdout.flush()
+                    own_schedule_print = own_schedule_print +(' -- ')
+                own_schedule_print = own_schedule_print +(' ')
+            own_schedule_print = own_schedule_print +('\n')
         if name.find('*')>=0:
             new_price = price*2
-            print ('   total pay:'+str(price)+ 'x 2 = '+str(new_price)+' Euros')
+            own_schedule_print = own_schedule_print + ('   total pay:'+str(price)+ ' x 2 = '+str(new_price)+' Euros') + "\n"
         else:
-            print ('   total pay:'+str(price)+ ' Euros')
+            own_schedule_print = own_schedule_print + ('   total pay:'+str(price)+ ' Euros') + "\n"
 
-    print ('\n=========================================================================================')
-    print ("\n\n\n")
+        to_print = to_print + own_schedule_print
 
-    print ("Report: ")
-    print ("   ranking failures: "+str(ranking_failure_counter))
-    print (ranking_failure_report)
-    print ("   unused slots:     "+str(unused_slots))
-    print ("   diff most/least:  "+str(diff_most_least))
-    print ("   best cycle:       "+str(cycles_used))
-    print ("   cycles used:      "+str(cycles_used))
-    print ("")
-    print (" © Levente Varga 2018")
+        f=open('./out/'+name+".plays", 'w+')
+        f.write( own_schedule_print + common_part_print + ("\n\n\n © Levente Varga 2018"))
+        f.close()
+
+    to_print = to_print + ('\n=========================================================================================') + "\n"
+
+    report_to_print=''
+    report_to_print = report_to_print + ("Report: ") + '\n'
+    report_to_print = report_to_print +  ("   ranking failures: "+str(ranking_failure_counter)) + '\n'
+    report_to_print = report_to_print +  (ranking_failure_report) + '\n'
+    report_to_print = report_to_print +  ("   unused slots:     "+str(unused_slots)) + '\n'
+    report_to_print = report_to_print +  ("   diff most/least:  "+str(diff_most_least)) + '\n'
+    report_to_print = report_to_print +  ("   best cycle:       "+str(cycles_used)) + '\n'
+    report_to_print = report_to_print +  ("   cycles used:      "+str(cycles_used)) + '\n'
+    report_to_print = report_to_print +  '\n'
+    report_to_print = report_to_print +  (" © Levente Varga 2018") + '\n'
+
+    print report_to_print
+
+    to_print = to_print + report_to_print
+
+    f=open('./out/'+"common"+".txt", 'w+')
+    f.write(to_print)
+    f.close()
 
 
 main()
