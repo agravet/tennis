@@ -6,6 +6,14 @@ Backlog:
 ---------------------------------------------------------------
 
 
+- After injuries (or a flu) players sometimes wish “no ranking matches during the two first weeks, only training”.
+------------------------------------------------------------------------------------------------------------------
+
+
+- Only 1-2 training turns in addition to ranking matches. I.e very limited number of turns (with individual parameter?)
+-----------------------------------------------------------------------------------------------------------------------
+
+
 - add email support
 -------------------
   1) player email / phone nr to be added to configuration
