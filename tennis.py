@@ -232,6 +232,7 @@ def read_config():
     global groups
     global tsdata
     global result
+    global price_list
     tsdata = [""]*timeslots
     #print (group_nr)
     groups=[0]*group_nr
@@ -378,7 +379,9 @@ def read_config():
             players[i]=(data,name,t,z)
         pos+=t_pos
         x,t_pos=read_value(raw[pos:],"sp")
-
+    #handle prices
+    x,t_pos=read_value(raw,"timeslot_prices")
+    price_list = x.split(",")
 
 
 
@@ -625,6 +628,7 @@ def main():
     global stored_result
     global stored_analyze
     global stored_players
+    global price_list
 
     sys.stdout.write("\nStarted:")
     sys.stdout.flush()
@@ -721,12 +725,13 @@ def main():
 
     os.system("rm -rf ics")
     for i in range(players_nr):
+        price = 0
         slot,name,counter,incomp=players[i]
         ics=read_ics_template_header()
         print ("\n")
         print ('=======  %s  plays %d times =============================================================' % (name, counter))
         for x in range(weeks):
-            print ('------------------------------------------------------------------------------week nr: %d:' % (x+base_week))
+            print ('w%d:' % (x+base_week))
             for y in range(timeslots):
                 if slot[x][y]=='R' or slot[x][y]=='T':
                     print ('%-35s  %-40s' % (result[x][y], tsdata[y]))
@@ -734,6 +739,7 @@ def main():
                         ics+=addToICS(result[x][y], tsdata[y], str(x+base_week), "Ranking Match")
                     else:
                         ics+=addToICS(result[x][y], tsdata[y], str(x+base_week), "Training Match")
+                    #price += float(price_list[y])
         ics+=read_ics_template_footer()
         ics=ics.replace(' ','',1000)
         if not os.path.exists("ics"):
@@ -742,8 +748,28 @@ def main():
         f.write(ics)
         f.close()
         #print ics
+        print('\n-Payments:---------------------------------------------------')
+        for x in range(weeks):
+            #print ('%0d:' % (x+base_week))
+            sys.stdout.write('w'+str((x+base_week))+': ')
+            sys.stdout.flush()
+            for y in range(timeslots):
+                if slot[x][y]=='R' or slot[x][y]=='T':
+                    sys.stdout.write(price_list[y])
+                    price += float(price_list[y])
+                else:
+                    sys.stdout.write(' -- ')
+                sys.stdout.write(' ')
+                sys.stdout.flush()
+            sys.stdout.write('\n')
+            sys.stdout.flush()
+        if name.find('*')>=0:
+            new_price = price*2
+            print ('   total pay:'+str(price)+ 'x 2 = '+str(new_price)+' Euros')
+        else:
+            print ('   total pay:'+str(price)+ ' Euros')
 
-    print ('=========================================================================================')
+    print ('\n=========================================================================================')
     print ("\n\n\n")
 
     print ("Report: ")

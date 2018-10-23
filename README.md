@@ -1,15 +1,9 @@
 Backlog:
 =======
 
+
 - check if why some slot are left empty(if problem real at all)
 ---------------------------------------------------------------
-
-- add timeslot price tag
-------------------------
-for payment calculation
-
-- add payment report
---------------------
 
 
 - add email support
@@ -20,6 +14,7 @@ for payment calculation
   3) phone number to be added to the player alarm information for making easy
      contacting the other guy when needed
 
+
 - automatic result handling
 ---------------------------
     TBD
@@ -27,6 +22,17 @@ for payment calculation
 
 Completed:
 =========
+
+
+- add timeslot price tag
+------------------------
+for payment calculation
+
+
+- add payment report
+--------------------
+
+
 - generic holiday rules added
 ---------------------
     special_timeslots=holidays
