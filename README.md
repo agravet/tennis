@@ -31,6 +31,9 @@ Backlog:
 Completed:
 =========
 
+-player with fewer obtions allowed over weekly limit with 1
+------------------------------------------------------------
+
 
 - add timeslot price tag
 ------------------------

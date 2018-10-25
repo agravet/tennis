@@ -398,20 +398,26 @@ def mark_related_timeslots(slot,week,timeslot):
     if timeslot in related_ts:
         mapped_array=related_ts[timeslot]
         for j in range(len(mapped_array)):
-            if slot[week][mapped_array[j]]=='c':
+            if slot[week][mapped_array[j]]=='c' or slot[week][mapped_array[j]]=='n':
                 slot[week][mapped_array[j]] = 'b'
     return slot
 
 
 def check_week(slot, week):
     counter=0
+    options_nr=0
+    global low_slot_nr
     for i in range(timeslots):
         if slot[week][i]=="T" or slot[week][i]=="R":
             counter+=1
+        if slot[week][i]=="T" or slot[week][i]=="R" or slot[week][i]=="c":
+            options_nr+=1
+    if (options_nr <= low_slot_nr):
+        counter -=1
     return counter
 
 
-def match_players(player1,player2,force,ranking):
+def match_players(player1,player2,force,ranking,x,y):
     global timeslots
     global weeks
     global result
@@ -426,8 +432,9 @@ def match_players(player1,player2,force,ranking):
     (slot2,name2,counter2,incomp2,e2,f2)=player2
     if name1 == name2:
         return (slot1,name1,counter1,incomp1),(slot2,name2,counter2,incomp2),False
-    for j in range(timeslots):
-        for i in range(weeks):
+
+    for j in (range(timeslots)):
+        for i in range(x,weeks-y):
             if (slot1[i][j] == 'c' and slot2[i][j] == 'c'
                 and result[i][j] == ""
                 and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
@@ -443,7 +450,7 @@ def match_players(player1,player2,force,ranking):
     #print name1+"-"+name2+" no match found"
     if force==True:
         for j in range(timeslots):
-            for i in range(weeks):
+            for i in range(x,weeks-y):
                 if (slot1[i][j] == 'c'
                     and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != 'a'
                     and result[i][j] == ""
@@ -457,8 +464,8 @@ def match_players(player1,player2,force,ranking):
                     slot2=mark_related_timeslots(slot2,i,j)
                     slot2[i][j] = mark
                     return (slot1,name1,counter1,incomp1,e1,f1),(slot2,name2,counter2,incomp2,e2,f2),True
-        for j in range(timeslots):
-            for i in range(weeks):
+        for j in (range(timeslots)):
+            for i in range(x,weeks-y):
                 if (slot2[i][j] == 'c'
                     and slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != 'a'
                     and result[i][j] == ""
@@ -472,8 +479,8 @@ def match_players(player1,player2,force,ranking):
                     slot2=mark_related_timeslots(slot2,i,j)
                     slot2[i][j] = mark
                     return (slot1,name1,counter1,incomp1,e1,f1),(slot2,name2,counter2,incomp2,e2,f2),True
-        for j in range(timeslots):
-            for i in range(weeks):
+        for j in (range(timeslots)):
+            for i in range(x,weeks-y):
                 if (slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != 'a'
                     and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != 'a'
                     and result[i][j] == ""
@@ -487,6 +494,7 @@ def match_players(player1,player2,force,ranking):
                     slot2=mark_related_timeslots(slot2,i,j)
                     slot2[i][j] = mark
                     return (slot1,name1,counter1,incomp1,e1,f1),(slot2,name2,counter2,incomp2,e2,f2),True
+
     #if ranking==True:
     #    print comments+name1+" - "+name2+" FAILURE:"
     return (slot1,name1,counter1,incomp1,e1,f1),(slot2,name2,counter2,incomp2,e2,f2),False
@@ -495,9 +503,11 @@ def match_players(player1,player2,force,ranking):
 def handle_group(first,last):
     global ranking_failure_counter
     global ranking_failure_report
+    global weeks_before_ranking
+    global weeks_after_ranking
     for i in range(first, last+1):
         for j in range(i+1, last+1):
-            players[i],players[j],res = match_players(players[i],players[j],True,True)
+            players[i],players[j],res = match_players(players[i],players[j],True,True,weeks_before_ranking,weeks_after_ranking)
             if res == False:
                 slot1,name1,counter1,incomp1,e1,f1=players[i]
                 slot2,name2,counter2,incomp2,e2,f2=players[j]
@@ -519,18 +529,19 @@ def handle_rankings():
 
 def handle_training_by_best_effort_random(mode):
 
-    limit=2*players_nr/weeks+3
+    global additional_plays
+    limit=weeks+additional_plays
     for x in range(0,1000):
         i=random.randint(0, players_nr-1)
         j=random.randint(0, players_nr-1)
         if i!=j:
             slot1,name1,counter1,incomp1,e1,f1=players[i]
-            if counter1 > limit:
+            if counter1 >= limit:
                 continue
             slot2,name2,counter2,incomp2,e2,f2=players[j]
-            if counter2 > limit:
+            if counter2 >= limit:
                 continue
-            players[i],players[j],res = match_players(players[i],players[j],mode,False)
+            players[i],players[j],res = match_players(players[i],players[j],mode,False,0,0)
     return False
 
 
@@ -558,6 +569,33 @@ def analyze():
     return max - min
 
 
+def readInput(text):
+    print text
+    # raw_input returns the empty string for "enter"
+    yes = {'yes','y', 'ye', ''}
+    no = {'no','n'}
+
+    choice = raw_input().lower()
+    if choice in yes:
+        return True
+    elif choice in no:
+        return False
+    else:
+        sys.stdout.write("Please respond with 'yes' or 'no'")
+
+def sendEmail(to):
+
+    import smtplib
+
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.starttls()
+    server.login("levente.varga@gmail", "EnolaGay.18")
+
+    msg = "YOUR MESSAGE!"
+    server.sendmail("levente.varga@gmail", to, msg)
+    server.quit()
+
+
 #####################################################################################
 #####################################################################################
 
@@ -568,22 +606,35 @@ def main():
     global max_slots_left
     global max_diff_between_most_and_least_plays
     global max_cycles
+    global low_slot_nr
+    global additional_plays
+    global weeks_before_ranking
+    global weeks_after_ranking
 
     #default settings
     max_play_per_week = 2
     max_slots_left = 0
     max_diff_between_most_and_least_plays=2
     max_cycles=500
+    low_slot_nr=5
+    additional_plays=1
+    weeks_before_ranking=2
+    weeks_after_ranking=1
 
     if len(sys.argv) > 1 and (sys.argv[1]=="help" or sys.argv[1]=="-h" or sys.argv[1]=="--help"):
             print ("Usage:")
-            print ("python "+sys.argv[0]+" max_cycles=1000 max_plays_per_week=2 max_unused_lots=0 max_diff=2")
+            print ("python "+sys.argv[0]+" max_cycles=1000 max_plays_per_week=1 max_unused_lots=0 max_diff=2 low_slot_nr=5 additional_plays=1 weeks_before_ranking=2 weeks_after_ranking=1")
             exit(0)
 
     print ("max_cycles = "+str(max_cycles))
     print ("max_plays_per_week = "+str(max_play_per_week))
     print ("override max_unused_lots = "+str(max_slots_left))
     print ("max_diff = "+str(max_diff_between_most_and_least_plays))
+    print ("low_slot_nr = "+str(low_slot_nr))
+    print ("additional_plays = "+str(additional_plays))
+    print ("weeks_before_ranking = "+str(weeks_before_ranking))
+    print ("weeks_after_ranking = "+str(weeks_after_ranking))
+    print ('-----------------')
 
     #read command line parameters
     for i in range(len(sys.argv)):
@@ -609,6 +660,26 @@ def main():
         if val:
             max_diff_between_most_and_least_plays = int(val)
             print ("override max_diff = "+str(max_diff_between_most_and_least_plays))
+            continue
+        val,t_pos =read_pair(sys.argv[i], "low_slot_nr")
+        if val:
+            low_slot_nr = int(val)
+            print ("override low_slot_nr = "+str(low_slot_nr))
+            continue
+        val,t_pos =read_pair(sys.argv[i], "additional_plays")
+        if val:
+            additional_plays = int(val)
+            print ("override additional_plays = "+str(additional_plays))
+            continue
+        val,t_pos =read_pair(sys.argv[i], "weeks_before_ranking")
+        if val:
+            weeks_before_ranking = int(val)
+            print ("override weeks_before_ranking = "+str(weeks_before_ranking))
+            continue
+        val,t_pos =read_pair(sys.argv[i], "weeks_after_ranking")
+        if val:
+            weeks_after_ranking = int(val)
+            print ("override weeks_after_ranking = "+str(weeks_after_ranking))
             continue
 
     global timeslots
@@ -658,24 +729,26 @@ def main():
         handle_rankings()
 
         #handle training matches, respecting player options
+        orig_low_slot_nr = low_slot_nr
+        low_slot_nr = 0
         while (True):
             res = handle_training_by_best_effort_random(False)
             if res==False:
                 break
 
-        #handle training matches, forcinging player options
-        #while (True):
-        #    res = handle_training_by_best_effort_random(True)
-        #    if res==False:
-        #        break
+        low_slot_nr = orig_low_slot_nr
+        while (True):
+            res = handle_training_by_best_effort_random(False)
+            if res==False:
+                break
 
         #collect statitistical data
         unused_slots = count_unused_timeslots()
         diff_most_least = analyze()
 
         #store best result so far
-        if best > (diff_most_least + unused_slots):
-            best = (diff_most_least + unused_slots)
+        if best > (diff_most_least + unused_slots*3):
+            best = (diff_most_least + unused_slots*3)
             stored_result=copy.deepcopy(result)
             stored_players=copy.deepcopy(players)
             stored_analyze = diff_most_least, unused_slots, cycles_used
@@ -709,11 +782,11 @@ def main():
         common_part_print = common_part_print +  ("========= ranking group: "+str(i)+"  ===============================================================") + "\n"
         for j in range(a,b+1):
             slot,name,counter,incomp,e,f=players[j]
-            common_part_print = common_part_print +  ('%-20s  %-40s  %-20s' % (name,e,f)) + "\n"
+            common_part_print = common_part_print +  ('%-20s  %-50s  %-20s' % (name,e,f)) + "\n"
     common_part_print = common_part_print +  ("========= training group: =================================================================") + "\n"
     for i in range(b+1,players_nr):
         slot,name,counter,incomp,e,f=players[i]
-        common_part_print = common_part_print +  ('%-20s  %-40s  %-20s' % (name,e,f)) + "\n"
+        common_part_print = common_part_print +  ('%-20s  %-50s  %-20s' % (name,e,f)) + "\n"
     common_part_print = common_part_print +  ("===========================================================================================") + "\n"
 
     common_part_print = common_part_print +  ("\n\n\n") + "\n"
@@ -799,6 +872,20 @@ def main():
     f=open('./out/'+"common"+".txt", 'w+')
     f.write(to_print)
     f.close()
+
+    os.system("cp tennis.conf out/")
+
+    if readInput('Are you satisfied with the results? [Y/n] '):
+        if readInput('Do you want to send the results? [Y/n] '):
+            #send email
+            print "Sending results by e-mail"
+            sendEmail("levente.l.varga@ericsson.com")
+
+        else:
+            print "Results not sent, but they still can be found in folder out"
+    else:
+        print "Please modify parameters and re-rrun the program"
+
 
 
 main()
