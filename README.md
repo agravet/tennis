@@ -2,10 +2,6 @@ Backlog:
 =======
 
 
-- check if why some slot are left empty(if problem real at all)
----------------------------------------------------------------
-
-
 - After injuries (or a flu) players sometimes wish “no ranking matches during the two first weeks, only training”.
 ------------------------------------------------------------------------------------------------------------------
 
@@ -33,6 +29,10 @@ Completed:
 
 -player with fewer obtions allowed over weekly limit with 1
 ------------------------------------------------------------
+
+- check if why some slot are left empty(if problem real at all)
+---------------------------------------------------------------
+  no need
 
 
 - add timeslot price tag
