@@ -28,7 +28,6 @@ def handle_comment_lines(str):
         str=str.replace(str[key_start:key_end],"",len(str))
 
 
-
 def read_pair(str,key):
     key_start = str.find(key)
     if key_start == -1:
@@ -59,7 +58,7 @@ def pre_read_config():
     global starting_week
     global ending_week
     players_nr=0
-    fh = open("tennis.conf", "r")
+    fh = open("local/tennis.conf", "r")
     raw = fh.read()
     raw=raw.replace('\r\n','\n',1000)
     raw=handle_comment_lines(raw)
@@ -68,7 +67,6 @@ def pre_read_config():
     raw=raw.replace("\n\n","\n",1000)
     starting_week,t_pos=read_value(raw,"starting_week")
     ending_week,t_pos=read_value(raw,"ending_week")
-
     if starting_week and ending_week:
         weeks=int(ending_week)-int(starting_week)+1
         if (weeks<0):
@@ -82,7 +80,6 @@ def pre_read_config():
             break
         group_nr+=1
         pos+=t_pos
-
     pos = 0
     players_nr=0
     while (True):
@@ -91,7 +88,6 @@ def pre_read_config():
             break
         players_nr+=1
         pos+=t_pos
-
     pos = 0
     timeslots=0
     x,t_pos=read_value(raw[pos:],"rule")
@@ -99,11 +95,13 @@ def pre_read_config():
         return
     timeslots=len(x)
 
+
 def read_ics_template_header():
     fh = open("template_header", "r")
     header = fh.read()
     #print header
     return header
+
 
 def read_ics_template_body():
     fh = open("template_body", "r")
@@ -111,11 +109,13 @@ def read_ics_template_body():
     #print body
     return body
 
+
 def read_ics_template_footer():
     fh = open("template_footer", "r")
     footer = fh.read()
     #print body
     return footer
+
 
 def convertDate(day,week_no, hour, min):
     import datetime
@@ -127,11 +127,11 @@ def convertDate(day,week_no, hour, min):
     if day == 'Friday': day='-5'
     if day == 'Saturday': day='-6'
     t = datetime.datetime.strptime("2018-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
-    #print(t.__format__("%y%m%dT%H%M%S"))
     return t.__format__("%Y%m%dT%H%M%S")
 
+
+
 def getTimeslotData(ts):
-    #tts ="Monday_19:30_Martinmaki_R"
     tts=ts
     loc=tts.find("_")
     day=tts[:loc]
@@ -143,8 +143,8 @@ def getTimeslotData(ts):
     min=tts[:loc]
     tts=tts[loc+1:]
     location=tts
-    #print day+"-"+hour+"-"+min+"-"+location
     return day,hour,min,location
+
 
 def addToICS(info,ts,week_no, desc):
     day,hour,min,location = getTimeslotData(ts)
@@ -157,9 +157,7 @@ def addToICS(info,ts,week_no, desc):
     temp_ics = temp_ics.replace("<TENNIS LOCATION>",location,1)
     temp_ics = temp_ics.replace("<TENNIS DESC>",desc,1)
     temp_ics = temp_ics.replace("<TENNIS ALARM DESC>",desc,1)
-    #print ics+temp_ics
     return temp_ics
-
 
 
 def handle_rule(str,weeks,timeslots):
@@ -236,7 +234,6 @@ def read_config():
     global result
     global price_list
     tsdata = [""]*timeslots
-    #print (group_nr)
     groups=[0]*group_nr
     player_counter=-1
     players = [0] * players_nr
@@ -246,23 +243,19 @@ def read_config():
     for i in range(weeks):
         for j in range(timeslots):
             a[i][j] = ""
-
-    fh = open("tennis.conf", "r")
+    fh = open("local/tennis.conf", "r")
     raw = fh.read()
     raw=handle_comment_lines(raw)
     raw=raw.replace(' ','',1000)
     raw=raw.replace("/\n","//",1000)
     raw=raw.replace("\n\n","\n",1000)
     ts,t_pos=read_value(raw,"timeslots")
-
     result=copy.deepcopy(a)
-
     handleTimeslotDetails(ts)
     pos=t_pos
     last_group_start=0
     last_group_end=0
     group_counter=0
-
     while(True):
         gr_name,t_pos=read_value(raw[pos:],"ranking_group")
         if t_pos<0:
@@ -275,7 +268,6 @@ def read_config():
                 group_counter+=1
                 break
             last_group_end+=1
-
             name_list_str,t_pos=read_value(raw[pos:],"name")
             if (t_pos==-1):
                 break
@@ -296,7 +288,6 @@ def read_config():
                     print ("timeslot length error in config, " + name)
                     exit(1)
             pos+=t_pos
-
             if check_next_key(raw[pos:],"exception_week_rule"):
                 x,t_pos=read_value(raw[pos:],"exception_week_rule")
                 while t_pos>-1:
@@ -308,16 +299,12 @@ def read_config():
                     if not check_next_key(raw[pos:],"exception_week_rule"):
                         break
                     x,t_pos=read_value(raw[pos:],"exception_week_rule")
-
-
-
             if check_next_key(raw[pos:],"incompatible_with"):
                 x,t_pos=read_value(raw[pos:],"incompatible_with")
                 while t_pos>-1:
                     (data,name,t,z,e,f)=players[player_counter]
                     y=copy.deepcopy(z)
                     y.append(x)
-                    #print name+" "+"incomaptible_with:"+str(z)
                     players[player_counter] = (data,name,t,y,e,f)
                     pos+=t_pos
                     if not check_next_key(raw[pos:],"incompatible_with"):
@@ -343,7 +330,6 @@ def read_config():
             data = copy.deepcopy(handle_rule(rule,weeks,timeslots))
             players[player_counter]=(data,name,0,z,email,phone)
             pos+=t_pos
-
             if check_next_key(raw[pos:],"exception_week_rule"):
                 x,t_pos=read_value(raw[pos:],"exception_week_rule")
                 while t_pos>-1:
@@ -381,18 +367,14 @@ def read_config():
                 result[int(wnr)-base_week][k]=" +++++ HOLIDAY: CLOSED +++++++++                "
             if ts[k] == 's':
                 result[int(wnr)-base_week][k]=" +++++ HOLIDAY: AVAILABLE ++++++                "
-
         for i in range(len(players)):
             (data,name,t,z,e,f)=players[i]
             data=copy.deepcopy(handle_exception(data,ts,wnr))
             players[i]=(data,name,t,z,e,f)
         pos+=t_pos
         x,t_pos=read_value(raw[pos:],"sp")
-    #handle prices
     x,t_pos=read_value(raw,"timeslot_prices")
     price_list = x.split(",")
-
-
 
 
 def mark_related_timeslots(slot,week,timeslot):
@@ -435,7 +417,6 @@ def match_players(player1,player2,force,ranking,x,y):
     (slot2,name2,counter2,incomp2,e2,f2)=player2
     if name1 == name2:
         return (slot1,name1,counter1,incomp1),(slot2,name2,counter2,incomp2),False
-
     for j in (range(timeslots)):
         for i in range(x,weeks-y):
             if (slot1[i][j] == 'c' and slot2[i][j] == 'c'
@@ -450,7 +431,6 @@ def match_players(player1,player2,force,ranking,x,y):
                 slot2=mark_related_timeslots(slot2,i,j)
                 slot2[i][j] = mark
                 return (slot1,name1,counter1,incomp1,e1,f1),(slot2,name2,counter2,incomp2,e2,f2),True
-    #print name1+"-"+name2+" no match found"
     if force==True:
         for j in range(timeslots):
             for i in range(x,weeks-y):
@@ -497,9 +477,6 @@ def match_players(player1,player2,force,ranking,x,y):
                     slot2=mark_related_timeslots(slot2,i,j)
                     slot2[i][j] = mark
                     return (slot1,name1,counter1,incomp1,e1,f1),(slot2,name2,counter2,incomp2,e2,f2),True
-
-    #if ranking==True:
-    #    print comments+name1+" - "+name2+" FAILURE:"
     return (slot1,name1,counter1,incomp1,e1,f1),(slot2,name2,counter2,incomp2,e2,f2),False
 
 
@@ -524,14 +501,12 @@ def handle_group(first,last):
 
 
 def handle_rankings():
-    #print groups
     for i in range(group_nr):
         a,b=groups[i]
         handle_group(a,b)
 
 
 def handle_training_by_best_effort_random(mode):
-
     global additional_plays
     limit=weeks+additional_plays
     for x in range(0,1000):
@@ -555,7 +530,6 @@ def count_unused_timeslots():
         for j in range(timeslots):
             if result[i][j] == "" :
                 counter += 1
-    #print "Unused timeslots: "+ str(counter) +" out of:"+str(weeks*timeslots)
     return counter
 
 
@@ -577,7 +551,6 @@ def readInput(text):
     # raw_input returns the empty string for "enter"
     yes = {'yes','y', 'ye', ''}
     no = {'no','n'}
-
     choice = raw_input().lower()
     if choice in yes:
         return True
@@ -586,14 +559,12 @@ def readInput(text):
     else:
         sys.stdout.write("Please respond with 'yes' or 'no'")
 
+
 def sendEmail(to):
-
     import smtplib
-
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.starttls()
-    server.login("levente.varga@gmail", "EnolaGay.18")
-
+    server.login("levente.varga@gmail", "xxxxx")
     msg = "YOUR MESSAGE!"
     server.sendmail("levente.varga@gmail", to, msg)
     server.quit()
@@ -604,7 +575,6 @@ def sendEmail(to):
 
 
 def main():
-
     global max_play_per_week
     global max_slots_left
     global max_diff_between_most_and_least_plays
@@ -614,7 +584,6 @@ def main():
     global weeks_before_ranking
     global weeks_after_ranking
     global help_low_nr_games
-
     #default settings
     max_play_per_week = 2
     max_slots_left = 0
@@ -624,12 +593,10 @@ def main():
     additional_plays=1
     weeks_before_ranking=2
     weeks_after_ranking=1
-
     if len(sys.argv) > 1 and (sys.argv[1]=="help" or sys.argv[1]=="-h" or sys.argv[1]=="--help"):
             print ("Usage:")
             print ("python "+sys.argv[0]+" max_cycles=1000 max_plays_per_week=1 max_unused_lots=0 max_diff=2 low_slot_nr=5 additional_plays=1 weeks_before_ranking=2 weeks_after_ranking=1")
             exit(0)
-
     print ("max_cycles = "+str(max_cycles))
     print ("max_plays_per_week = "+str(max_play_per_week))
     print ("override max_unused_lots = "+str(max_slots_left))
@@ -708,10 +675,8 @@ def main():
     global starting_week
     global ending_week
     global help_low_nr_games
-
     sys.stdout.write("\nStarted:")
     sys.stdout.flush()
-
     cycles_used=0
     best = 100
     best_index = 0
@@ -725,42 +690,32 @@ def main():
         ranking_failure_counter = 0
         ranking_failure_report =""
         help_low_nr_games=0
-
         #read configuration
         pre_read_config()
         read_config()
         players_orig=copy.deepcopy(players)
-
-        #result=copy.deepcopy(a)
-
         #handle ranking matches
         handle_rankings()
-
         #handle training matches, respecting player options
         orig_low_slot_nr = low_slot_nr
         low_slot_nr = 0
-
         while (True):
             res = handle_training_by_best_effort_random(False)
             if res==False:
                 break
-
         help_low_nr_games=1
         while (True):
             res = handle_training_by_best_effort_random(False)
             if res==False:
                 break
-
         low_slot_nr = orig_low_slot_nr
         while (True):
             res = handle_training_by_best_effort_random(False)
             if res==False:
                 break
-
         #collect statitistical data
         unused_slots = count_unused_timeslots()
         diff_most_least = analyze()
-
         #store best result so far
         if best > (diff_most_least + unused_slots*3):
             best = (diff_most_least + unused_slots*3)
@@ -773,7 +728,6 @@ def main():
             if (counter % 10) == 0 :
                 sys.stdout.write('-')
         sys.stdout.flush()
-
         #stop looping if conditions are fulfilled
         if diff_most_least <= max_diff_between_most_and_least_plays and unused_slots <= max_slots_left:
             break
@@ -781,12 +735,10 @@ def main():
             break
         else:
             cycles_used = cycles_used + 1
-
     #after loop, prepare results
     result= copy.deepcopy(stored_result)
     players=copy.deepcopy(stored_players)
     diff_most_least, unused_slots, best_cycle = stored_analyze
-
     #prezent the results
     to_print = ''
     common_part_print=''
@@ -803,7 +755,6 @@ def main():
         slot,name,counter,incomp,e,f=players[i]
         common_part_print = common_part_print +  ('%-20s  %-50s  %-20s' % (name,e,f)) + "\n"
     common_part_print = common_part_print +  ("===========================================================================================") + "\n"
-
     common_part_print = common_part_print +  ("\n\n\n") + "\n"
     for i in range(weeks):
         common_part_print = common_part_print + ("========= week: "+str(i+base_week)+"  ===============================================================") + "\n"
@@ -814,9 +765,7 @@ def main():
                 text=" +++++ UNUSED : AVAILABLE ++++++                "
             common_part_print = common_part_print +  ('%-35s  %-40s' % (text, tsdata[j])) + "\n"
     common_part_print = common_part_print + ("=======================================================================================================") + "\n"
-
     to_print = to_print + common_part_print
-
     os.system("rm -rf out")
     for i in range(players_nr):
         own_schedule_print=''
@@ -860,13 +809,10 @@ def main():
             own_schedule_print = own_schedule_print + ('   total pay:'+str(price)+ ' x 2 = '+str(new_price)+' Euros') + "\n"
         else:
             own_schedule_print = own_schedule_print + ('   total pay:'+str(price)+ ' Euros') + "\n"
-
         to_print = to_print + own_schedule_print
-
         f=open('./out/'+name+".txt", 'w+')
         f.write( own_schedule_print + common_part_print + ("\n\n\n © Levente Varga 2018"))
         f.close()
-
     to_print = to_print + ('\n=========================================================================================') + "\n"
 
     report_to_print=''
@@ -887,18 +833,19 @@ def main():
     f=open('./out/'+"common"+".txt", 'w+')
     f.write(to_print)
     f.close()
-    out_folder="out_"+starting_week+"-"+ending_week
-    out_folder_pub=out_folder+"_pub"
-    os.system("cp -rf out "+out_folder_pub)
-    os.system("cp tennis.conf out/")
-    os.system("cp -rf out "+out_folder)
-    os.system("rm  -rf "+out_folder+".zip "+out_folder_pub+".zip")
-    os.system("zip -rq "+out_folder_pub+".zip "+out_folder_pub)
-    os.system("zip -rq "+out_folder+".zip "+out_folder)
-    os.system("rm  -rf "+out_folder+" "+out_folder_pub)
 
 
     if readInput('Are you satisfied with the results? [Y/n] '):
+        out_folder="out_"+starting_week+"-"+ending_week
+        out_folder_pub=out_folder+"_pub"
+        os.system("cp -rf out "+out_folder_pub)
+        os.system("cp local/tennis.conf out/")
+        os.system("cp -rf out "+out_folder)
+        os.system("rm  -rf "+out_folder+".zip "+out_folder_pub+".zip")
+        os.system("zip -rq "+out_folder_pub+".zip "+out_folder_pub)
+        os.system("zip -rq "+out_folder+".zip "+out_folder)
+        os.system("rm  -rf "+out_folder+" "+out_folder_pub)
+
         if readInput('Do you want to send the results? [Y/n] '):
             #send email
             print "Sending results by e-mail"
