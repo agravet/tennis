@@ -1,2 +1,5 @@
 *.ics
 .git-credentials
+out*/*
+*.zip
+.vscode

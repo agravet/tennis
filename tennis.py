@@ -56,6 +56,8 @@ def pre_read_config():
     global base_week
     global groups
     global timeslots
+    global starting_week
+    global ending_week
     players_nr=0
     fh = open("tennis.conf", "r")
     raw = fh.read()
@@ -403,7 +405,8 @@ def mark_related_timeslots(slot,week,timeslot):
     return slot
 
 
-def check_week(slot, week):
+def check_week(slot, week, plays):
+    global help_low_nr_games
     counter=0
     options_nr=0
     global low_slot_nr
@@ -412,7 +415,7 @@ def check_week(slot, week):
             counter+=1
         if slot[week][i]=="T" or slot[week][i]=="R" or slot[week][i]=="c":
             options_nr+=1
-    if (options_nr <= low_slot_nr):
+    if (options_nr <= low_slot_nr) or (help_low_nr_games and plays < int(ending_week)-int(starting_week)):
         counter -=1
     return counter
 
@@ -438,7 +441,7 @@ def match_players(player1,player2,force,ranking,x,y):
             if (slot1[i][j] == 'c' and slot2[i][j] == 'c'
                 and result[i][j] == ""
                 and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
-                and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week) :
+                and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week) :
                 result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1, name2)
                 counter1 +=1
                 counter2 +=1
@@ -455,7 +458,7 @@ def match_players(player1,player2,force,ranking,x,y):
                     and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != 'a'
                     and result[i][j] == ""
                     and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
-                    and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week):
+                    and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week):
                     result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1, name2+"(F)")
                     counter1 +=1
                     counter2 +=1
@@ -470,7 +473,7 @@ def match_players(player1,player2,force,ranking,x,y):
                     and slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != 'a'
                     and result[i][j] == ""
                     and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
-                    and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week):
+                    and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week):
                     result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1+"(F)", name2)
                     counter1 +=1
                     counter2 +=1
@@ -485,7 +488,7 @@ def match_players(player1,player2,force,ranking,x,y):
                     and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != 'a'
                     and result[i][j] == ""
                     and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
-                    and check_week(slot1, i)<max_play_per_week and check_week(slot2, i)<max_play_per_week):
+                    and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week):
                     result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1+"(F)", name2+"(F)")
                     counter1 +=1
                     counter2 +=1
@@ -610,6 +613,7 @@ def main():
     global additional_plays
     global weeks_before_ranking
     global weeks_after_ranking
+    global help_low_nr_games
 
     #default settings
     max_play_per_week = 2
@@ -701,6 +705,9 @@ def main():
     global stored_analyze
     global stored_players
     global price_list
+    global starting_week
+    global ending_week
+    global help_low_nr_games
 
     sys.stdout.write("\nStarted:")
     sys.stdout.flush()
@@ -717,6 +724,7 @@ def main():
         group_nr=0
         ranking_failure_counter = 0
         ranking_failure_report =""
+        help_low_nr_games=0
 
         #read configuration
         pre_read_config()
@@ -731,6 +739,13 @@ def main():
         #handle training matches, respecting player options
         orig_low_slot_nr = low_slot_nr
         low_slot_nr = 0
+
+        while (True):
+            res = handle_training_by_best_effort_random(False)
+            if res==False:
+                break
+
+        help_low_nr_games=1
         while (True):
             res = handle_training_by_best_effort_random(False)
             if res==False:
@@ -779,7 +794,7 @@ def main():
     common_part_print = common_part_print +  ("--------------------------------------------------------------------------------------------------------") + "\n"
     for i in range(group_nr):
         a,b=groups[i]
-        common_part_print = common_part_print +  ("========= ranking group: "+str(i)+"  ===============================================================") + "\n"
+        common_part_print = common_part_print +  ("========= ranking group: "+str(i+1)+"  ===============================================================") + "\n"
         for j in range(a,b+1):
             slot,name,counter,incomp,e,f=players[j]
             common_part_print = common_part_print +  ('%-20s  %-50s  %-20s' % (name,e,f)) + "\n"
@@ -848,7 +863,7 @@ def main():
 
         to_print = to_print + own_schedule_print
 
-        f=open('./out/'+name+".plays", 'w+')
+        f=open('./out/'+name+".txt", 'w+')
         f.write( own_schedule_print + common_part_print + ("\n\n\n © Levente Varga 2018"))
         f.close()
 
@@ -872,8 +887,16 @@ def main():
     f=open('./out/'+"common"+".txt", 'w+')
     f.write(to_print)
     f.close()
-
+    out_folder="out_"+starting_week+"-"+ending_week
+    out_folder_pub=out_folder+"_pub"
+    os.system("cp -rf out "+out_folder_pub)
     os.system("cp tennis.conf out/")
+    os.system("cp -rf out "+out_folder)
+    os.system("rm  -rf "+out_folder+".zip "+out_folder_pub+".zip")
+    os.system("zip -rq "+out_folder_pub+".zip "+out_folder_pub)
+    os.system("zip -rq "+out_folder+".zip "+out_folder)
+    os.system("rm  -rf "+out_folder+" "+out_folder_pub)
+
 
     if readInput('Are you satisfied with the results? [Y/n] '):
         if readInput('Do you want to send the results? [Y/n] '):
