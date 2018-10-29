@@ -58,6 +58,7 @@ def pre_read_config():
     global timeslots
     global starting_week
     global ending_week
+    global year
     players_nr=0
     fh = open("local/tennis.conf", "r")
     raw = fh.read()
@@ -66,6 +67,9 @@ def pre_read_config():
     raw=raw.replace(' ','',1000)
     raw=raw.replace("/\n","//",1000)
     raw=raw.replace("\n\n","\n",1000)
+    year_t,t_pos=read_value(raw,"year")
+    if (year_t):
+        year=int(year_t)
     starting_week,t_pos=read_value(raw,"starting_week")
     ending_week,t_pos=read_value(raw,"ending_week")
 
@@ -121,6 +125,7 @@ def read_ics_template_footer():
 
 
 def convertDate(day,week_no, hour, min):
+    global year
     import datetime
     if day == 'Sunday': day='-0'
     if day == 'Monday': day='-1'
@@ -132,9 +137,9 @@ def convertDate(day,week_no, hour, min):
     if (int(week_no)>52):
         res = int(week_no)%52
         week_no = str(res)
-        t = datetime.datetime.strptime("2019-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
+        t = datetime.datetime.strptime(str(year+1)+"-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
     else:
-        t = datetime.datetime.strptime("2018-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
+        t = datetime.datetime.strptime(str(year)+"-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
     return t.__format__("%Y%m%dT%H%M%S")
 
 

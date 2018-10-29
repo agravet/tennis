@@ -1,10 +1,6 @@
 Backlog:
 =======
 
-- Add year info to the weeknumbers
-----------------------------------
-
-
 - After injuries (or a flu) players sometimes wish “no ranking matches during the two first weeks, only training”.
 ------------------------------------------------------------------------------------------------------------------
 
@@ -29,6 +25,11 @@ Backlog:
 
 Completed:
 =========
+
+
+- Add year info to the weeknumbers
+----------------------------------
+
 
 -player with fewer obtions allowed over weekly limit with 1
 ------------------------------------------------------------
