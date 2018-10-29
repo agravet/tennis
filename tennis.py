@@ -127,13 +127,13 @@ def read_ics_template_footer():
 def convertDate(day,week_no, hour, min):
     global year
     import datetime
-    if day == 'Sunday': day='-0'
-    if day == 'Monday': day='-1'
-    if day == 'Tuesday': day='-2'
-    if day == 'Wednesday': day='-3'
-    if day == 'Thursday': day='-4'
-    if day == 'Friday': day='-5'
-    if day == 'Saturday': day='-6'
+    if day == 'Sun': day='-0'
+    if day == 'Mon': day='-1'
+    if day == 'Tue': day='-2'
+    if day == 'Wed': day='-3'
+    if day == 'Thu': day='-4'
+    if day == 'Fri': day='-5'
+    if day == 'Sat': day='-6'
     if (int(week_no)>52):
         res = int(week_no)%52
         week_no = str(res)
@@ -141,6 +141,25 @@ def convertDate(day,week_no, hour, min):
     else:
         t = datetime.datetime.strptime(str(year)+"-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
     return t.__format__("%Y%m%dT%H%M%S")
+
+
+def convertDatePrint(day,week_no, hour, min):
+    global year
+    import datetime
+    if day == 'Sun': day='-0'
+    if day == 'Mon': day='-1'
+    if day == 'Tue': day='-2'
+    if day == 'Wed': day='-3'
+    if day == 'Thu': day='-4'
+    if day == 'Fri': day='-5'
+    if day == 'Sat': day='-6'
+    if (int(week_no)>52):
+        res = int(week_no)%52
+        week_no = str(res)
+        t = datetime.datetime.strptime(str(year+1)+"-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
+    else:
+        t = datetime.datetime.strptime(str(year)+"-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
+    return t.__format__("%b %d")
 
 
 
@@ -171,6 +190,12 @@ def addToICS(info,ts,week_no, desc):
     temp_ics = temp_ics.replace("<TENNIS DESC>",desc,1)
     temp_ics = temp_ics.replace("<TENNIS ALARM DESC>",desc,1)
     return temp_ics
+
+
+def getTSInfo(ts,week_no):
+    day,hour,min,location = getTimeslotData(ts)
+    start_date=convertDatePrint(day,week_no,hour,min)
+    return start_date+" "+ts
 
 
 def handle_rule(str,weeks,timeslots):
@@ -383,9 +408,9 @@ def read_config():
             comp=52
         for k in range (len(ts)):
             if ts[k] == 'l':
-                result[int(wnr)-base_week+comp][k]=" +++++ HOLIDAY: CLOSED +++++++++                "
+                result[int(wnr)-base_week+comp][k]=" +++ HOLIDAY: CLOSED +++   "
             if ts[k] == 's':
-                result[int(wnr)-base_week+comp][k]=" +++++ HOLIDAY: AVAILABLE ++++++                "
+                result[int(wnr)-base_week+comp][k]=" +++ HOLIDAY: AVAILABLE +++"
         for i in range(len(players)):
             (data,name,t,z,e,f)=players[i]
             data=copy.deepcopy(handle_exception(data,ts,wnr))
@@ -442,7 +467,7 @@ def match_players(player1,player2,force,ranking,x,y):
                 and result[i][j] == ""
                 and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                 and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week) :
-                result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1, name2)
+                result[i][j] = '%-2s %-15s - %-15s'  % (comments, name1, name2)
                 counter1 +=1
                 counter2 +=1
                 slot1=mark_related_timeslots(slot1,i,j)
@@ -458,7 +483,7 @@ def match_players(player1,player2,force,ranking,x,y):
                     and result[i][j] == ""
                     and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                     and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week):
-                    result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1, name2+"(F)")
+                    result[i][j] = '%-2s %-15s - %-15s'  % (comments, name1, name2+"(F)")
                     counter1 +=1
                     counter2 +=1
                     slot1=mark_related_timeslots(slot1,i,j)
@@ -473,7 +498,7 @@ def match_players(player1,player2,force,ranking,x,y):
                     and result[i][j] == ""
                     and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                     and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week):
-                    result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1+"(F)", name2)
+                    result[i][j] = '%-2s %-15s - %-15s'  % (comments, name1+"(F)", name2)
                     counter1 +=1
                     counter2 +=1
                     slot1=mark_related_timeslots(slot1,i,j)
@@ -488,7 +513,7 @@ def match_players(player1,player2,force,ranking,x,y):
                     and result[i][j] == ""
                     and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                     and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week):
-                    result[i][j] = '%-2s %-20s  -  %-20s' % (comments, name1+"(F)", name2+"(F)")
+                    result[i][j] = '%-2s %-15s - %-15s'  % (comments, name1+"(F)", name2+"(F)")
                     counter1 +=1
                     counter2 +=1
                     slot1=mark_related_timeslots(slot1,i,j)
@@ -781,8 +806,8 @@ def main():
             if result[i][j]:
                 text=result[i][j]
             else:
-                text=" +++++ UNUSED : AVAILABLE ++++++                "
-            common_part_print = common_part_print +  ('%-35s  %-40s' % (text, tsdata[j])) + "\n"
+                text=" +++ UNUSED : AVAILABLE +++"
+            common_part_print = common_part_print +  ('%-36s  %-40s' % (text, getTSInfo(tsdata[j], str(i+base_week)) )) + "\n"
     common_part_print = common_part_print + ("=======================================================================================================") + "\n"
     to_print = to_print + common_part_print
     os.system("rm -rf out")
@@ -797,7 +822,7 @@ def main():
             own_schedule_print = own_schedule_print + ('w%d:' % ((x+base_week)%52)) + "\n"
             for y in range(timeslots):
                 if slot[x][y]=='R' or slot[x][y]=='T':
-                    own_schedule_print = own_schedule_print + ('%-35s  %-40s' % (result[x][y], tsdata[y])) + "\n"
+                    own_schedule_print = own_schedule_print + ('%-36s  %-40s' % (result[x][y], getTSInfo(tsdata[y], str(x+base_week)) )) + "\n" 
                     if slot[x][y]=='R':
                         ics+=addToICS(result[x][y], tsdata[y], str(x+base_week), "Ranking Match")
                     else:
