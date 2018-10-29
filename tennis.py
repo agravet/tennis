@@ -28,6 +28,7 @@ def handle_comment_lines(str):
         str=str.replace(str[key_start:key_end],"",len(str))
 
 
+
 def read_pair(str,key):
     key_start = str.find(key)
     if key_start == -1:
@@ -67,6 +68,7 @@ def pre_read_config():
     raw=raw.replace("\n\n","\n",1000)
     starting_week,t_pos=read_value(raw,"starting_week")
     ending_week,t_pos=read_value(raw,"ending_week")
+
     if starting_week and ending_week:
         weeks=int(ending_week)-int(starting_week)+1
         if (weeks<0):
@@ -80,6 +82,7 @@ def pre_read_config():
             break
         group_nr+=1
         pos+=t_pos
+
     pos = 0
     players_nr=0
     while (True):
@@ -126,7 +129,12 @@ def convertDate(day,week_no, hour, min):
     if day == 'Thursday': day='-4'
     if day == 'Friday': day='-5'
     if day == 'Saturday': day='-6'
-    t = datetime.datetime.strptime("2018-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
+    if (int(week_no)>52):
+        res = int(week_no)%52
+        week_no = str(res)
+        t = datetime.datetime.strptime("2019-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
+    else:
+        t = datetime.datetime.strptime("2018-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
     return t.__format__("%Y%m%dT%H%M%S")
 
 
@@ -185,13 +193,16 @@ def getException(z):
 
 def handle_exception(slot,str,weeknr):
     global base_week
+    comp = 0
+    if (int(weeknr)-base_week)<0:
+        comp = 52
     ts = [0] * len(str)
     for i in range(len(str)):
         if str[i]!='x':
             ts[i]=str[i]
         else:
-            ts[i]=slot[int(weeknr)-base_week][i]
-    slot[int(weeknr)-base_week]=copy.deepcopy(ts)
+            ts[i]=slot[int(weeknr)-base_week+comp][i]
+    slot[int(weeknr)-base_week+comp]=copy.deepcopy(ts)
     return slot
 
 
@@ -362,11 +373,14 @@ def read_config():
     x,t_pos=read_value(raw[pos:],"sp")
     while t_pos>-1:
         wnr,ts=getException(x)
+        comp=0
+        if (int(wnr)-base_week)<0:
+            comp=52
         for k in range (len(ts)):
             if ts[k] == 'l':
-                result[int(wnr)-base_week][k]=" +++++ HOLIDAY: CLOSED +++++++++                "
+                result[int(wnr)-base_week+comp][k]=" +++++ HOLIDAY: CLOSED +++++++++                "
             if ts[k] == 's':
-                result[int(wnr)-base_week][k]=" +++++ HOLIDAY: AVAILABLE ++++++                "
+                result[int(wnr)-base_week+comp][k]=" +++++ HOLIDAY: AVAILABLE ++++++                "
         for i in range(len(players)):
             (data,name,t,z,e,f)=players[i]
             data=copy.deepcopy(handle_exception(data,ts,wnr))
@@ -757,7 +771,7 @@ def main():
     common_part_print = common_part_print +  ("===========================================================================================") + "\n"
     common_part_print = common_part_print +  ("\n\n\n") + "\n"
     for i in range(weeks):
-        common_part_print = common_part_print + ("========= week: "+str(i+base_week)+"  ===============================================================") + "\n"
+        common_part_print = common_part_print + ("========= week: "+str((i+base_week)%52)+"  ===============================================================") + "\n"
         for j in range(timeslots):
             if result[i][j]:
                 text=result[i][j]
@@ -775,7 +789,7 @@ def main():
         own_schedule_print = own_schedule_print + ("\n")
         own_schedule_print = own_schedule_print + ('=======  %s  plays %d times =============================================================' % (name, counter)) + "\n"
         for x in range(weeks):
-            own_schedule_print = own_schedule_print + ('w%d:' % (x+base_week)) + "\n"
+            own_schedule_print = own_schedule_print + ('w%d:' % ((x+base_week)%52)) + "\n"
             for y in range(timeslots):
                 if slot[x][y]=='R' or slot[x][y]=='T':
                     own_schedule_print = own_schedule_print + ('%-35s  %-40s' % (result[x][y], tsdata[y])) + "\n"
