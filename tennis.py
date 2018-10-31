@@ -422,12 +422,22 @@ def read_config():
 
 
 def mark_related_timeslots(slot,week,timeslot):
-    related_ts={0:[0,1,2],1:[0,1,2],2:[0,1,2],4:[4,5],5:[4,5],6:[6,7,8],7:[6,7,8],8:[6,7,8],9:[9,10],10:[9,10]}
+    #related_ts={0:[0,1,2],1:[0,1,2],2:[0,1,2],4:[4,5],5:[4,5],6:[6,7,8],7:[6,7,8],8:[6,7,8],9:[9,10],10:[9,10]}
+    related_ts={0:[1,2,3],1:[0,2,3],2:[0,1,3],3:[0,1,2],4:[5,6,7,8],5:[4,6,7,8],6:[4,5,7,8],7:[4,5,6,8],8:[4,5,6,7],9:[10],10:[9]}
     if timeslot in related_ts:
         mapped_array=related_ts[timeslot]
         for j in range(len(mapped_array)):
             if slot[week][mapped_array[j]]=='c' or slot[week][mapped_array[j]]=='n':
                 slot[week][mapped_array[j]] = 'b'
+        if (timeslot == 9 or timeslot == 10) and week+1 < weeks:
+            if slot[week+1][0]=='c' or slot[week+1][0]=='n':
+                slot[week+1][0] = 'b'
+            if slot[week+1][1]=='c' or slot[week+1][1]=='n':
+                slot[week+1][1] = 'b'
+            if slot[week+1][2]=='c' or slot[week+1][2]=='n':
+                slot[week+1][2] = 'b'
+
+
     return slot
 
 
@@ -553,7 +563,7 @@ def handle_rankings():
 def handle_training_by_best_effort_random(mode):
     global additional_plays
     limit=weeks+additional_plays
-    for x in range(0,1000):
+    for x in range(0,2000):
         i=random.randint(0, players_nr-1)
         j=random.randint(0, players_nr-1)
         if i!=j:
@@ -587,7 +597,7 @@ def analyze():
             min = counter
         if max <  counter:
             max = counter
-    return max - min
+    return max,min
 
 
 def readInput(text):
@@ -743,30 +753,22 @@ def main():
         #handle training matches, respecting player options
         orig_low_slot_nr = low_slot_nr
         low_slot_nr = 0
-        while (True):
-            res = handle_training_by_best_effort_random(False)
-            if res==False:
-                break
+        handle_training_by_best_effort_random(False)
         help_low_nr_games=1
-        while (True):
-            res = handle_training_by_best_effort_random(False)
-            if res==False:
-                break
+        handle_training_by_best_effort_random(False)
         low_slot_nr = orig_low_slot_nr
-        while (True):
-            res = handle_training_by_best_effort_random(False)
-            if res==False:
-                break
+        handle_training_by_best_effort_random(False)
         #collect statitistical data
         unused_slots = count_unused_timeslots()
-        diff_most_least = analyze()
+        max,min=analyze()
+        diff_most_least = max-min
         #store best result so far
-        if best > (diff_most_least + unused_slots*3):
-            best = (diff_most_least + unused_slots*3)
+        if best > (diff_most_least + unused_slots*4 + 5*(weeks-min) + 4*ranking_failure_counter):
+            best = (diff_most_least + unused_slots*4 + 5*(weeks-min) + 4*ranking_failure_counter)
             stored_result=copy.deepcopy(result)
             stored_players=copy.deepcopy(players)
             stored_analyze = diff_most_least, unused_slots, cycles_used
-            sys.stdout.write("("+str(diff_most_least)+"/"+str(unused_slots)+")")
+            sys.stdout.write("("+str(diff_most_least)+"/"+str(unused_slots)+"/"+str(min)+"/"+str(ranking_failure_counter)+")")
         else:
             counter = counter + 1
             if (counter % 10) == 0 :
