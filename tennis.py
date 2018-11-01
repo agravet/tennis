@@ -653,6 +653,23 @@ def sendEmail(to):
     server.quit()
 
 
+import time
+from threading import Thread
+
+
+def thread_func(i):
+    global stop
+    while 1:
+        print 'Press <ENTER> to if result is good enough'
+        raw_input("")
+        stop=True
+        return
+
+def thread_start():
+    t = Thread(target=thread_func, args=(0,))
+    t.start()
+
+
 #####################################################################################
 #####################################################################################
 
@@ -667,11 +684,13 @@ def main():
     global weeks_before_ranking
     global weeks_after_ranking
     global help_low_nr_games
+    global stop
+    stop = False
     #default settings
     max_play_per_week = 2
     max_slots_left = 0
     max_diff_between_most_and_least_plays=2
-    max_cycles=500
+    max_cycles=10000
     low_slot_nr=5
     additional_plays=1
     weeks_before_ranking=2
@@ -755,6 +774,8 @@ def main():
     best_index = 0
     best_cycle = 0
     counter=0
+
+    thread_start()
     while(cycles_used < max_cycles):
         timeslots = 0
         weeks = 0
@@ -815,6 +836,8 @@ def main():
             sys.stdout.flush()
 
         cycles_used = cycles_used + 1
+        if stop:
+            break
     print ""
     #after loop, prepare results
     result= copy.deepcopy(stored_result)
@@ -916,27 +939,28 @@ def main():
     f.write(to_print)
     f.close()
 
-
+    
     if readInput('Are you satisfied with the results? [Y/n] '):
-        out_folder="out_"+starting_week+"-"+ending_week
-        out_folder_pub=out_folder+"_pub"
-        os.system("cp -rf out "+out_folder_pub)
-        os.system("cp local/tennis.conf out/")
-        os.system("cp -rf out "+out_folder)
-        os.system("rm  -rf "+out_folder+".zip "+out_folder_pub+".zip")
-        os.system("zip -rq "+out_folder_pub+".zip "+out_folder_pub)
-        os.system("zip -rq "+out_folder+".zip "+out_folder)
-        os.system("rm  -rf "+out_folder+" "+out_folder_pub)
-
-        if readInput('Do you want to send the results? [Y/n] '):
+        
+        if readInput('Do you want to store the results? [Y/n] '):
+            '''
             #send email
             print "Sending results by e-mail"
             sendEmail("levente.l.varga@ericsson.com")
-
+            '''
+            out_folder="out_"+starting_week+"-"+ending_week
+            out_folder_pub=out_folder+"_pub"
+            os.system("cp -rf out "+out_folder_pub)
+            os.system("cp local/tennis.conf out/")
+            os.system("cp -rf out "+out_folder)
+            os.system("rm  -rf "+out_folder+".zip "+out_folder_pub+".zip")
+            os.system("zip -rq "+out_folder_pub+".zip "+out_folder_pub)
+            os.system("zip -rq "+out_folder+".zip "+out_folder)
+            os.system("rm  -rf "+out_folder+" "+out_folder_pub)
         else:
-            print "Results not sent, but they still can be found in folder out"
+            print "Results not stored, but they still can be found in folder \'out\'"
     else:
-        print "Please modify parameters and re-rrun the program"
+        print "Please modify parameters and re-run the program"
 
 
 
