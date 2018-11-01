@@ -429,6 +429,13 @@ def mark_related_timeslots(slot,week,timeslot):
         for j in range(len(mapped_array)):
             if slot[week][mapped_array[j]]=='c' or slot[week][mapped_array[j]]=='n':
                 slot[week][mapped_array[j]] = 'b'
+
+        if (timeslot == 0 or timeslot == 1 or timeslot == 2) and week > 0:
+            if slot[week-1][9]=='c' or slot[week-1][9]=='n':
+                slot[week-1][9] = 'b'
+            if slot[week-1][10]=='c' or slot[week-1][10]=='n':
+                slot[week-1][10] = 'b'
+
         if (timeslot == 9 or timeslot == 10) and week+1 < weeks:
             if slot[week+1][0]=='c' or slot[week+1][0]=='n':
                 slot[week+1][0] = 'b'
@@ -563,7 +570,7 @@ def handle_rankings():
 def handle_training_by_best_effort_random(mode):
     global additional_plays
     limit=weeks+additional_plays
-    for x in range(0,2000):
+    for x in range(0,1000):
         i=random.randint(0, players_nr-1)
         j=random.randint(0, players_nr-1)
         if i!=j:
@@ -575,6 +582,28 @@ def handle_training_by_best_effort_random(mode):
                 continue
             players[i],players[j],res = match_players(players[i],players[j],mode,False,0,0)
     return False
+
+
+def fill_slots():
+    for x in range(weeks):
+        for y in range(timeslots):
+            if result[x][y] == "":
+                min = weeks
+                min_index = -1
+                for i in range(players_nr):
+                    slot1,name1,counter1,incomp1,e1,f1=players[i]
+                    if slot1[x][y] == 'c':
+                        if min > counter1:
+                            min = counter1
+                            min_index = i
+                if (min_index != -1):
+                    for j in range(players_nr):
+                        if (min_index != j):
+                            slot2,name2,counter2,incomp2,e2,f2=players[j]
+                            if slot2[x][y] == 'c':
+                                players[min_index],players[j],res = match_players(players[min_index],players[j],False,False,0,0)
+
+
 
 
 def count_unused_timeslots():
@@ -593,7 +622,7 @@ def analyze():
     max=0
     for i in range(0,players_nr):
         slot,name,counter,incomp,e,f=players[i]
-        if min >  counter and counter > 0:
+        if min >  counter:
             min = counter
         if max <  counter:
             max = counter
@@ -649,12 +678,10 @@ def main():
     weeks_after_ranking=1
     if len(sys.argv) > 1 and (sys.argv[1]=="help" or sys.argv[1]=="-h" or sys.argv[1]=="--help"):
             print ("Usage:")
-            print ("python "+sys.argv[0]+" max_cycles=1000 max_plays_per_week=1 max_unused_lots=0 max_diff=2 low_slot_nr=5 additional_plays=1 weeks_before_ranking=2 weeks_after_ranking=1")
+            print ("python "+sys.argv[0]+" max_cycles=1000 max_plays_per_week=1 low_slot_nr=5 additional_plays=1 weeks_before_ranking=1 weeks_after_ranking=1")
             exit(0)
     print ("max_cycles = "+str(max_cycles))
     print ("max_plays_per_week = "+str(max_play_per_week))
-    print ("override max_unused_lots = "+str(max_slots_left))
-    print ("max_diff = "+str(max_diff_between_most_and_least_plays))
     print ("low_slot_nr = "+str(low_slot_nr))
     print ("additional_plays = "+str(additional_plays))
     print ("weeks_before_ranking = "+str(weeks_before_ranking))
@@ -675,32 +702,24 @@ def main():
             print ("override max_plays_per_week = "+str(max_play_per_week))
             continue
 
-        val,t_pos =read_pair(sys.argv[i], "max_unused_lots")
-        if val:
-            max_slots_left = int(val)
-            print ("override max_unused_lots = "+str(max_slots_left))
-            continue
-
-        val,t_pos =read_pair(sys.argv[i], "max_diff")
-        if val:
-            max_diff_between_most_and_least_plays = int(val)
-            print ("override max_diff = "+str(max_diff_between_most_and_least_plays))
-            continue
         val,t_pos =read_pair(sys.argv[i], "low_slot_nr")
         if val:
             low_slot_nr = int(val)
             print ("override low_slot_nr = "+str(low_slot_nr))
             continue
+
         val,t_pos =read_pair(sys.argv[i], "additional_plays")
         if val:
             additional_plays = int(val)
             print ("override additional_plays = "+str(additional_plays))
             continue
+
         val,t_pos =read_pair(sys.argv[i], "weeks_before_ranking")
         if val:
             weeks_before_ranking = int(val)
             print ("override weeks_before_ranking = "+str(weeks_before_ranking))
             continue
+
         val,t_pos =read_pair(sys.argv[i], "weeks_after_ranking")
         if val:
             weeks_after_ranking = int(val)
@@ -732,11 +751,11 @@ def main():
     sys.stdout.write("\nStarted:")
     sys.stdout.flush()
     cycles_used=0
-    best = 100
+    best = 10000
     best_index = 0
     best_cycle = 0
     counter=0
-    while(True):
+    while(cycles_used < max_cycles):
         timeslots = 0
         weeks = 0
         raw=""
@@ -751,6 +770,7 @@ def main():
         #handle ranking matches
         handle_rankings()
         #handle training matches, respecting player options
+
         orig_low_slot_nr = low_slot_nr
         low_slot_nr = 0
         handle_training_by_best_effort_random(False)
@@ -758,33 +778,48 @@ def main():
         handle_training_by_best_effort_random(False)
         low_slot_nr = orig_low_slot_nr
         handle_training_by_best_effort_random(False)
+
+        fill_slots()
+
         #collect statitistical data
         unused_slots = count_unused_timeslots()
         max,min=analyze()
         diff_most_least = max-min
         #store best result so far
-        if best > (diff_most_least + unused_slots*4 + 5*(weeks-min) + 4*ranking_failure_counter):
-            best = (diff_most_least + unused_slots*4 + 5*(weeks-min) + 4*ranking_failure_counter)
+        equiv = (diff_most_least*1 + unused_slots*5 + (weeks-min)* + 10*ranking_failure_counter)
+        if best > equiv:
+            best = equiv
             stored_result=copy.deepcopy(result)
             stored_players=copy.deepcopy(players)
-            stored_analyze = diff_most_least, unused_slots, cycles_used
+            stored_analyze = max, min, unused_slots, cycles_used
             sys.stdout.write("("+str(diff_most_least)+"/"+str(unused_slots)+"/"+str(min)+"/"+str(ranking_failure_counter)+")")
         else:
             counter = counter + 1
-            if (counter % 10) == 0 :
-                sys.stdout.write('-')
-        sys.stdout.flush()
-        #stop looping if conditions are fulfilled
-        if diff_most_least <= max_diff_between_most_and_least_plays and unused_slots <= max_slots_left:
-            break
-        if cycles_used > max_cycles:
-            break
-        else:
-            cycles_used = cycles_used + 1
+            '''
+            perc = "["+str("%  d" % (int(100*counter/max_cycles)))+'%]'
+            sys.stdout.write(perc)
+            for i in range(len(perc)):
+                sys.stdout.write('\b')
+            sys.stdout.flush()
+            '''
+            perc = '['
+            for i in range(10):
+                if i < int(10*counter/max_cycles)+1:
+                    perc +='*'
+                else:
+                    perc +=' '
+            perc +=']'
+            sys.stdout.write(perc)
+            for i in range(len(perc)):
+                sys.stdout.write('\b')
+            sys.stdout.flush()
+
+        cycles_used = cycles_used + 1
+    print ""
     #after loop, prepare results
     result= copy.deepcopy(stored_result)
     players=copy.deepcopy(stored_players)
-    diff_most_least, unused_slots, best_cycle = stored_analyze
+    max, min, unused_slots, best_cycle = stored_analyze
     #prezent the results
     to_print = ''
     common_part_print=''
@@ -866,8 +901,9 @@ def main():
     report_to_print = report_to_print +  ("   ranking failures: "+str(ranking_failure_counter)) + '\n'
     report_to_print = report_to_print +  (ranking_failure_report) + '\n'
     report_to_print = report_to_print +  ("   unused slots:     "+str(unused_slots)) + '\n'
-    report_to_print = report_to_print +  ("   diff most/least:  "+str(diff_most_least)) + '\n'
-    report_to_print = report_to_print +  ("   best cycle:       "+str(cycles_used)) + '\n'
+    report_to_print = report_to_print +  ("   diff most/least:  "+str(max - min)) + '\n'
+    report_to_print = report_to_print +  ("   max plays:        "+str(max)) + '\n'
+    report_to_print = report_to_print +  ("   min plays:        "+str(min)) + '\n'
     report_to_print = report_to_print +  ("   cycles used:      "+str(cycles_used)) + '\n'
     report_to_print = report_to_print +  '\n'
     report_to_print = report_to_print +  (" © Levente Varga 2018") + '\n'
