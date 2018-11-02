@@ -2,8 +2,7 @@ Backlog:
 =======
 
 
--Week handling not correct
----------------------------
+
 
 - After injuries (or a flu) players sometimes wish “no ranking matches during the two first weeks, only training”.
 ------------------------------------------------------------------------------------------------------------------
@@ -29,6 +28,10 @@ Backlog:
 
 Completed:
 =========
+
+-Week handling not correct
+---------------------------
+fixed
 
 
 - Add year info to the weeknumbers

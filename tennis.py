@@ -53,7 +53,6 @@ def pre_read_config():
     global group_nr
     global players_nr
     global players
-    global base_week
     global groups
     global timeslots
     global starting_week
@@ -76,8 +75,7 @@ def pre_read_config():
     if starting_week and ending_week:
         weeks=int(ending_week)-int(starting_week)+1
         if (weeks<0):
-            weeks += 52
-        base_week = int(starting_week)
+            weeks += 52 
     pos = 0
     group_nr=0
     while (True):
@@ -124,8 +122,36 @@ def read_ics_template_footer():
     return footer
 
 
+def covertWeekNumberToIndex(w_no,st_w,end_w):
+    return (int(end_w)-int(st_w)+52)-1
+
+
+def convertIndexToWeekNumber(w_ind,st_w,end_w):
+    toret = (int(st_w)-1+int(w_ind))%52+1
+    #print "w_ind: %d st_w:%s end_w:%s   - > %d" % (w_ind,st_w,end_w,toret)
+    return toret
+
+def convertIndexToWeekNumberMachine(w_ind,st_w,end_w):
+    #52-5, 0-> 52 + 1->0 2->1
+    toret = (int(st_w)+int(w_ind))%53
+    #print "w_ind: %d st_w:%s end_w:%s   - > %d" % (w_ind,st_w,end_w,toret)
+    return toret
+
+def getYear(w_nos,st_w,end_w,start_year):
+    w_no =int(w_nos)+1
+    if int(w_no) < int(st_w):
+        toret = int(start_year)+1
+    else:
+        toret = int(start_year)
+    #print "w_no:%d,st_w:%d,end_w:%d,start_year:%d -> toret:%d" % (int(w_no),int(st_w),int(end_w),int(start_year),toret)
+    return toret
+
+
+
 def convertDate(day,week_no, hour, min):
     global year
+    global starting_week
+    global ending_week
     import datetime
     if day == 'Sun': day='-0'
     if day == 'Mon': day='-1'
@@ -134,17 +160,15 @@ def convertDate(day,week_no, hour, min):
     if day == 'Thu': day='-4'
     if day == 'Fri': day='-5'
     if day == 'Sat': day='-6'
-    if (int(week_no)>52):
-        res = int(week_no)%52
-        week_no = str(res)
-        t = datetime.datetime.strptime(str(year+1)+"-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
-    else:
-        t = datetime.datetime.strptime(str(year)+"-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
+    t = datetime.datetime.strptime(str(getYear(week_no,starting_week,ending_week,year))+"-W"+ str(int(week_no)) + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
+    #print "yyy(day:%s,week_no:%s, hour:%s, min:%s -> %s)" % (day,week_no, hour, min, t.__format__("%Y %b %d"))
     return t.__format__("%Y%m%dT%H%M%S")
 
 
 def convertDatePrint(day,week_no, hour, min):
     global year
+    global starting_week
+    global ending_week
     import datetime
     if day == 'Sun': day='-0'
     if day == 'Mon': day='-1'
@@ -153,13 +177,9 @@ def convertDatePrint(day,week_no, hour, min):
     if day == 'Thu': day='-4'
     if day == 'Fri': day='-5'
     if day == 'Sat': day='-6'
-    if (int(week_no)>52):
-        res = int(week_no)%52
-        week_no = str(res)
-        t = datetime.datetime.strptime(str(year+1)+"-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
-    else:
-        t = datetime.datetime.strptime(str(year)+"-W"+ week_no + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
-    return t.__format__("%b %d")
+    t = datetime.datetime.strptime(str(getYear(week_no,starting_week,ending_week,year))+"-W"+ str(int(week_no)) + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
+    #print "xxx(day:%s,week_no:%s, hour:%s, min:%s -> %s)" % (day,week_no, hour, min, t.__format__("%Y %b %d"))
+    return t.__format__("%b/%b/%y")
 
 
 
@@ -222,17 +242,15 @@ def getException(z):
 
 
 def handle_exception(slot,str,weeknr):
-    global base_week
-    comp = 0
-    if (int(weeknr)-base_week)<0:
-        comp = 52
+    global starting_week
+    global ending_week
     ts = [0] * len(str)
     for i in range(len(str)):
         if str[i]!='x':
             ts[i]=str[i]
         else:
-            ts[i]=slot[int(weeknr)-base_week+comp][i]
-    slot[int(weeknr)-base_week+comp]=copy.deepcopy(ts)
+            ts[i]=slot[covertWeekNumberToIndex(weeknr,starting_week,ending_week)][i]
+    slot[covertWeekNumberToIndex(weeknr,starting_week,ending_week)]=copy.deepcopy(ts)
     return slot
 
 
@@ -403,14 +421,11 @@ def read_config():
     x,t_pos=read_value(raw[pos:],"sp")
     while t_pos>-1:
         wnr,ts=getException(x)
-        comp=0
-        if (int(wnr)-base_week)<0:
-            comp=52
         for k in range (len(ts)):
             if ts[k] == 'l':
-                result[int(wnr)-base_week+comp][k]=" +++ HOLIDAY: CLOSED +++   "
+                result[covertWeekNumberToIndex(wnr,starting_week,ending_week)][k]=" +++ HOLIDAY: CLOSED +++   "
             if ts[k] == 's':
-                result[int(wnr)-base_week+comp][k]=" +++ HOLIDAY: AVAILABLE +++"
+                result[covertWeekNumberToIndex(wnr,starting_week,ending_week)][k]=" +++ HOLIDAY: AVAILABLE +++"
         for i in range(len(players)):
             (data,name,t,z,e,f)=players[i]
             data=copy.deepcopy(handle_exception(data,ts,wnr))
@@ -697,7 +712,7 @@ def main():
     weeks_after_ranking=1
     if len(sys.argv) > 1 and (sys.argv[1]=="help" or sys.argv[1]=="-h" or sys.argv[1]=="--help"):
             print ("Usage:")
-            print ("python "+sys.argv[0]+" max_cycles=1000 max_plays_per_week=1 low_slot_nr=5 additional_plays=1 weeks_before_ranking=1 weeks_after_ranking=1")
+            print ("python "+sys.argv[0]+" max_cycles=1000 max_plays_per_week=1 low_slot_nr=5 additional_plays=0 weeks_before_ranking=1 weeks_after_ranking=1")
             exit(0)
     print ("max_cycles = "+str(max_cycles))
     print ("max_plays_per_week = "+str(max_play_per_week))
@@ -861,13 +876,13 @@ def main():
     common_part_print = common_part_print +  ("===========================================================================================") + "\n"
     common_part_print = common_part_print +  ("\n\n\n") + "\n"
     for i in range(weeks):
-        common_part_print = common_part_print + ("========= week: "+str((i+base_week)%52)+"  ===============================================================") + "\n"
+        common_part_print = common_part_print + ("========= week: "+str(convertIndexToWeekNumber(i,starting_week,ending_week))+"  ===============================================================") + "\n"
         for j in range(timeslots):
             if result[i][j]:
                 text=result[i][j]
             else:
                 text=" +++ UNUSED : AVAILABLE +++"
-            common_part_print = common_part_print +  ('%-36s  %-40s' % (text, getTSInfo(tsdata[j], str(i+base_week)) )) + "\n"
+            common_part_print = common_part_print +  ('%-36s  %-40s' % (text, getTSInfo(tsdata[j], str(convertIndexToWeekNumberMachine(i,starting_week,ending_week))) )) + "\n"
     common_part_print = common_part_print + ("=======================================================================================================") + "\n"
     to_print = to_print + common_part_print
     os.system("rm -rf out")
@@ -879,14 +894,14 @@ def main():
         own_schedule_print = own_schedule_print + ("\n")
         own_schedule_print = own_schedule_print + ('=======  %s  plays %d times =============================================================' % (name, counter)) + "\n"
         for x in range(weeks):
-            own_schedule_print = own_schedule_print + ('w%d:' % ((x+base_week)%52)) + "\n"
+            own_schedule_print = own_schedule_print + ('w%d:' % ((convertIndexToWeekNumber(x,starting_week,ending_week)))) + "\n"
             for y in range(timeslots):
                 if slot[x][y]=='R' or slot[x][y]=='T':
-                    own_schedule_print = own_schedule_print + ('%-36s  %-40s' % (result[x][y], getTSInfo(tsdata[y], str(x+base_week)) )) + "\n" 
+                    own_schedule_print = own_schedule_print + ('%-36s  %-40s' % (result[x][y], getTSInfo(tsdata[y], str(convertIndexToWeekNumberMachine(x,starting_week,ending_week)) ))) + "\n" 
                     if slot[x][y]=='R':
-                        ics+=addToICS(result[x][y], tsdata[y], str(x+base_week), "Ranking Match")
+                        ics+=addToICS(result[x][y], tsdata[y], str(convertIndexToWeekNumberMachine(x,starting_week,ending_week)), "Ranking Match")
                     else:
-                        ics+=addToICS(result[x][y], tsdata[y], str(x+base_week), "Training Match")
+                        ics+=addToICS(result[x][y], tsdata[y], str(convertIndexToWeekNumberMachine(x,starting_week,ending_week)), "Training Match")
                     #price += float(price_list[y])
         ics+=read_ics_template_footer()
         ics=ics.replace(' ','',1000)
@@ -898,8 +913,7 @@ def main():
         #print ics
         own_schedule_print = own_schedule_print +('\n-Payments:---------------------------------------------------') + "\n"
         for x in range(weeks):
-            #print ('%0d:' % (x+base_week))
-            own_schedule_print = own_schedule_print +('w'+str((x+base_week))+': ')
+            own_schedule_print = own_schedule_print +('w'+str((convertIndexToWeekNumber(x,starting_week,ending_week)))+': ')
             for y in range(timeslots):
                 if slot[x][y]=='R' or slot[x][y]=='T':
                     own_schedule_print = own_schedule_print +(price_list[y])
