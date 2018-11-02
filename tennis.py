@@ -561,7 +561,7 @@ def handle_group(first,last):
     global ranking_failure_report
     global weeks_before_ranking
     global weeks_after_ranking
-    for i in range(first, last+1):
+    for i in  range(first, last+1):
         for j in range(i+1, last+1):
             players[i],players[j],res = match_players(players[i],players[j],True,True,weeks_before_ranking,weeks_after_ranking)
             if res == False:
@@ -649,13 +649,17 @@ def readInput(text):
     # raw_input returns the empty string for "enter"
     yes = {'yes','y', 'ye', ''}
     no = {'no','n'}
-    choice = raw_input().lower()
-    if choice in yes:
-        return True
-    elif choice in no:
-        return False
-    else:
-        sys.stdout.write("Please respond with 'yes' or 'no'")
+    try:
+        choice = raw_input().lower()
+
+        if choice in yes:
+            return True
+        elif choice in no:
+            return False
+        else:
+            sys.stdout.write("Please respond with 'yes' or 'no'")   
+    except ValueError:
+        print "."
 
 
 def sendEmail(to):
@@ -674,11 +678,15 @@ from threading import Thread
 
 def thread_func(i):
     global stop
+    global pause
     while 1:
-        print 'Press <ENTER> to if result is good enough'
+        #print 'Press <ENTER> to if result is good enough'
         raw_input("")
-        stop=True
-        return
+        pause = True
+        handleResult(False)
+        if stop:
+            return
+
 
 def thread_start():
     t = Thread(target=thread_func, args=(0,))
@@ -700,26 +708,30 @@ def main():
     global weeks_after_ranking
     global help_low_nr_games
     global stop
+    global pause
+    global locked
+    locked = False
     stop = False
+    pause = False
     #default settings
-    max_play_per_week = 2
+    max_play_per_week = 1
     max_slots_left = 0
     max_diff_between_most_and_least_plays=2
     max_cycles=10000
     low_slot_nr=5
-    additional_plays=1
-    weeks_before_ranking=2
+    additional_plays=0
+    weeks_before_ranking=1
     weeks_after_ranking=1
     if len(sys.argv) > 1 and (sys.argv[1]=="help" or sys.argv[1]=="-h" or sys.argv[1]=="--help"):
             print ("Usage:")
-            print ("python "+sys.argv[0]+" max_cycles=1000 max_plays_per_week=1 low_slot_nr=5 additional_plays=0 weeks_before_ranking=1 weeks_after_ranking=1")
+            print ("python "+sys.argv[0]+" max_plays_per_week=1 low_slot_nr=5 additional_plays=0 max_cycles=5000 weeks_before_ranking=1 weeks_after_ranking=1")
             exit(0)
-    print ("max_cycles = "+str(max_cycles))
-    print ("max_plays_per_week = "+str(max_play_per_week))
-    print ("low_slot_nr = "+str(low_slot_nr))
-    print ("additional_plays = "+str(additional_plays))
-    print ("weeks_before_ranking = "+str(weeks_before_ranking))
-    print ("weeks_after_ranking = "+str(weeks_after_ranking))
+    print ("max_cycles="+str(max_cycles))
+    print ("max_plays_per_week="+str(max_play_per_week))
+    print ("low_slot_nr="+str(low_slot_nr))
+    print ("additional_plays="+str(additional_plays))
+    print ("weeks_before_ranking="+str(weeks_before_ranking))
+    print ("weeks_after_ranking="+str(weeks_after_ranking))
     print ('-----------------')
 
     #read command line parameters
@@ -727,37 +739,37 @@ def main():
         val,t_pos =read_pair(sys.argv[i], "max_cycles")
         if val:
             max_cycles = int(val)
-            print ("override max_cycles = "+str(max_cycles))
+            print ("override max_cycles="+str(max_cycles))
             continue
 
         val,t_pos =read_pair(sys.argv[i], "max_plays_per_week")
         if val:
             max_play_per_week = int(val)
-            print ("override max_plays_per_week = "+str(max_play_per_week))
+            print ("override max_plays_per_week="+str(max_play_per_week))
             continue
 
         val,t_pos =read_pair(sys.argv[i], "low_slot_nr")
         if val:
             low_slot_nr = int(val)
-            print ("override low_slot_nr = "+str(low_slot_nr))
+            print ("override low_slot_nr="+str(low_slot_nr))
             continue
 
         val,t_pos =read_pair(sys.argv[i], "additional_plays")
         if val:
             additional_plays = int(val)
-            print ("override additional_plays = "+str(additional_plays))
+            print ("override additional_plays="+str(additional_plays))
             continue
 
         val,t_pos =read_pair(sys.argv[i], "weeks_before_ranking")
         if val:
             weeks_before_ranking = int(val)
-            print ("override weeks_before_ranking = "+str(weeks_before_ranking))
+            print ("override weeks_before_ranking="+str(weeks_before_ranking))
             continue
 
         val,t_pos =read_pair(sys.argv[i], "weeks_after_ranking")
         if val:
             weeks_after_ranking = int(val)
-            print ("override weeks_after_ranking = "+str(weeks_after_ranking))
+            print ("override weeks_after_ranking="+str(weeks_after_ranking))
             continue
 
     global timeslots
@@ -785,12 +797,14 @@ def main():
     sys.stdout.write("\nStarted:")
     sys.stdout.flush()
     cycles_used=0
-    best = 10000
+    best = 100000
     best_index = 0
     best_cycle = 0
     counter=0
 
     thread_start()
+    print ""
+    base = ""
     while(cycles_used < max_cycles):
         timeslots = 0
         weeks = 0
@@ -822,13 +836,16 @@ def main():
         max,min=analyze()
         diff_most_least = max-min
         #store best result so far
-        equiv = (diff_most_least*1 + unused_slots*5 + (weeks-min)* + 10*ranking_failure_counter)
+        equiv = (diff_most_least*1 + unused_slots*5 + (weeks-min) + 10*ranking_failure_counter)
+
         if best > equiv:
             best = equiv
             stored_result=copy.deepcopy(result)
             stored_players=copy.deepcopy(players)
             stored_analyze = max, min, unused_slots, cycles_used
-            sys.stdout.write("("+str(diff_most_least)+"/"+str(unused_slots)+"/"+str(min)+"/"+str(ranking_failure_counter)+")")
+            #sys.stdout.write("("+str(diff_most_least)+"/"+str(unused_slots)+"/"+str(min)+"/"+str(ranking_failure_counter)+")")
+            base = " ("+str(diff_most_least)+"/"+str(unused_slots)+"/"+str(min)+"/"+str(ranking_failure_counter)+")"
+            base = " diff: %-2d unused: %-2d min: %-2d max: %-2d rank_fail: %-2d score: %-3d " % (diff_most_least, unused_slots, min, max, ranking_failure_counter, equiv)
         else:
             counter = counter + 1
             '''
@@ -838,21 +855,74 @@ def main():
                 sys.stdout.write('\b')
             sys.stdout.flush()
             '''
-            perc = '['
-            for i in range(10):
-                if i < int(10*counter/max_cycles)+1:
+            perc = base
+            perc += '['
+            for i in range(30):
+                if i < int(30*counter/max_cycles)+1:
                     perc +='*'
                 else:
                     perc +=' '
-            perc +=']'
+            perc +=']     '
             sys.stdout.write(perc)
             for i in range(len(perc)):
                 sys.stdout.write('\b')
             sys.stdout.flush()
 
         cycles_used = cycles_used + 1
+        while (pause):
+            time.sleep(0.1)
         if stop:
-            break
+            print "......."
+            exit(0)
+    handleResult(True)
+
+def handleResult(last):
+    global stop
+    global pause
+
+    global timeslots
+    global weeks
+    global raw
+    global group_nr
+    global players_nr
+    global players
+    global a
+    global groups
+    global tsdata
+    global result
+    global unused_slots
+    global diff_most_least
+    global ranking_failure_counter
+    global ranking_failure_report
+    global cycles_used
+    global stored_result
+    global stored_analyze
+    global stored_players
+    global price_list
+    global starting_week
+    global ending_week
+    global help_low_nr_games
+
+    global max_play_per_week
+    global max_slots_left
+    global max_diff_between_most_and_least_plays
+    global max_cycles
+    global low_slot_nr
+    global additional_plays
+    global weeks_before_ranking
+    global weeks_after_ranking
+    global help_low_nr_games
+    global locked
+
+    if locked:
+        return
+    else:
+        locked = True
+
+    if stop:
+        print ".."
+        exit(0)
+
     print ""
     #after loop, prepare results
     result= copy.deepcopy(stored_result)
@@ -937,12 +1007,12 @@ def main():
     report_to_print = report_to_print + ("Report: ") + '\n'
     report_to_print = report_to_print +  ("   ranking failures: "+str(ranking_failure_counter)) + '\n'
     report_to_print = report_to_print +  (ranking_failure_report) + '\n'
-    report_to_print = report_to_print +  ("   unused slots:     "+str(unused_slots)) + '\n'
-    report_to_print = report_to_print +  ("   diff most/least:  "+str(max - min)) + '\n'
-    report_to_print = report_to_print +  ("   max plays:        "+str(max)) + '\n'
-    report_to_print = report_to_print +  ("   min plays:        "+str(min)) + '\n'
-    report_to_print = report_to_print +  ("   cycles used:      "+str(cycles_used)) + '\n'
-    report_to_print = report_to_print +  '\n'
+    #report_to_print = report_to_print +  ("   unused slots:     "+str(unused_slots)) + '\n'
+    #report_to_print = report_to_print +  ("   diff most/least:  "+str(max - min)) + '\n'
+    #report_to_print = report_to_print +  ("   max plays:        "+str(max)) + '\n'
+    #report_to_print = report_to_print +  ("   min plays:        "+str(min)) + '\n'
+    #report_to_print = report_to_print +  ("   cycles used:      "+str(cycles_used)) + '\n'
+    #report_to_print = report_to_print +  '\n'
     report_to_print = report_to_print +  (" © Levente Varga 2018") + '\n'
 
     print report_to_print
@@ -953,28 +1023,33 @@ def main():
     f.write(to_print)
     f.close()
 
-    
-    if readInput('Are you satisfied with the results? [Y/n] '):
-        
-        if readInput('Do you want to store the results? [Y/n] '):
-            '''
-            #send email
-            print "Sending results by e-mail"
-            sendEmail("levente.l.varga@ericsson.com")
-            '''
-            out_folder="out_"+starting_week+"-"+ending_week
-            out_folder_pub=out_folder+"_pub"
-            os.system("cp -rf out "+out_folder_pub)
-            os.system("cp local/tennis.conf out/")
-            os.system("cp -rf out "+out_folder)
-            os.system("rm  -rf "+out_folder+".zip "+out_folder_pub+".zip")
-            os.system("zip -rq "+out_folder_pub+".zip "+out_folder_pub)
-            os.system("zip -rq "+out_folder+".zip "+out_folder)
-            os.system("rm  -rf "+out_folder+" "+out_folder_pub)
-        else:
-            print "Results not stored, but they still can be found in folder \'out\'"
+    if readInput('Are you satisfied with the results? [Y/n] ') :
+        stop = True
+        '''
+        #send email
+        print "Sending results by e-mail"
+        sendEmail("levente.l.varga@ericsson.com")
+        '''
+        out_folder="out_"+starting_week+"-"+ending_week
+        out_folder_pub=out_folder+"_pub"
+        os.system("cp -rf out "+out_folder_pub)
+        os.system("cp local/tennis.conf out/")
+        os.system("cp -rf out "+out_folder)
+        os.system("rm  -rf "+out_folder+".zip "+out_folder_pub+".zip")
+        os.system("zip -rq "+out_folder_pub+".zip "+out_folder_pub)
+        os.system("zip -rq "+out_folder+".zip "+out_folder)
+        os.system("rm  -rf "+out_folder+" "+out_folder_pub)
+        pause = False
+        print "results saved to "+out_folder+".zip "+out_folder_pub+".zip" + " and "+ out_folder_pub+".zip "+out_folder_pub
+        if last:
+            print ".."
+            exit(0)
     else:
-        print "Please modify parameters and re-run the program"
+        if last:
+            print "."
+            exit(0)
+        pause = False
+    locked = False
 
 
 
