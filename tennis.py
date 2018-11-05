@@ -1037,6 +1037,8 @@ def handleResult(last):
         os.system("cp local/tennis.conf out/")
         os.system("cp -rf out "+out_folder)
         os.system("rm  -rf "+out_folder+".zip "+out_folder_pub+".zip")
+        os.system("unix2dos -q "+ out_folder +"/*.txt")
+        os.system("unix2dos -q "+ out_folder_pub +"/*.txt")
         os.system("zip -rq "+out_folder_pub+".zip "+out_folder_pub)
         os.system("zip -rq "+out_folder+".zip "+out_folder)
         os.system("rm  -rf "+out_folder+" "+out_folder_pub)
