@@ -567,13 +567,11 @@ def handle_group(first,last):
             if res == False:
                 slot1,name1,counter1,incomp1,e1,f1=players[i]
                 slot2,name2,counter2,incomp2,e2,f2=players[j]
-                reason=""
                 if isIncluded(name1,incomp1,name2) or isIncluded(name2,incomp2,name1):
-                    reason = " due to incompatibilty"
+                    ranking_failure_report += "    # No ranking between: "+name1+" - "+name2 + " due to incompatibilty" +"\n"
                 else:
-                    reason = " due to strict rules"
                     ranking_failure_counter +=1
-                ranking_failure_report += "    # Ranking failure between: "+name1+" - "+name2 + reason +"\n"
+                    ranking_failure_report += "    # Ranking failure between: "+name1+" - "+name2 + " due to strict rules" +"\n"
 
 
 
@@ -933,28 +931,28 @@ def handleResult(last):
     to_print = ''
     common_part_print=''
     common_part_print = common_part_print +  ("\n\n\n\n\n\n\n\n")
-    common_part_print = common_part_print +  ("--------------------------------------------------------------------------------------------------------") + "\n"
+    common_part_print = common_part_print +  ("----------------------------------------------------------------------------------------------") + "\n"
     for i in range(group_nr):
         a,b=groups[i]
-        common_part_print = common_part_print +  ("========= ranking group: "+str(i+1)+"  ===============================================================") + "\n"
+        common_part_print = common_part_print +  ("========= ranking group: "+str(i+1)+"  ==========================================================") + "\n"
         for j in range(a,b+1):
             slot,name,counter,incomp,e,f=players[j]
             common_part_print = common_part_print +  ('%-20s  %-50s  %-20s' % (name,e,f)) + "\n"
-    common_part_print = common_part_print +  ("========= training group: =================================================================") + "\n"
+    common_part_print = common_part_print +  ("========= training group: ===============================================================") + "\n"
     for i in range(b+1,players_nr):
         slot,name,counter,incomp,e,f=players[i]
         common_part_print = common_part_print +  ('%-20s  %-50s  %-20s' % (name,e,f)) + "\n"
     common_part_print = common_part_print +  ("===========================================================================================") + "\n"
     common_part_print = common_part_print +  ("\n\n\n") + "\n"
     for i in range(weeks):
-        common_part_print = common_part_print + ("========= week: "+str("%02d" % convertIndexToWeekNumber(i,starting_week,ending_week))+"  ===============================================================") + "\n"
+        common_part_print = common_part_print + ("========= week: "+str("%02d" % convertIndexToWeekNumber(i,starting_week,ending_week))+"  ==========================================================") + "\n"
         for j in range(timeslots):
             if result[i][j]:
                 text=result[i][j]
             else:
                 text=" +++ UNUSED : AVAILABLE +++"
             common_part_print = common_part_print +  ('%-36s  %-40s' % (text, getTSInfo(tsdata[j], str(convertIndexToWeekNumberMachine(i,starting_week,ending_week))) )) + "\n"
-    common_part_print = common_part_print + ("=======================================================================================================") + "\n"
+    common_part_print = common_part_print + ("==============================================================================") + "\n"
     to_print = to_print + common_part_print
     os.system("rm -rf out")
     for i in range(players_nr):
@@ -963,7 +961,7 @@ def handleResult(last):
         slot,name,counter,incomp,e,f=players[i]
         ics=read_ics_template_header()
         own_schedule_print = own_schedule_print + ("\n")
-        own_schedule_print = own_schedule_print + ('=======  %s  plays %d times =============================================================' % (name, counter)) + "\n"
+        own_schedule_print = own_schedule_print + ('=======  %s  plays %d times =============================================' % (name, counter)) + "\n"
         for x in range(weeks):
             own_schedule_print = own_schedule_print + ('w%02d:' % ((convertIndexToWeekNumber(x,starting_week,ending_week)))) + "\n"
             for y in range(timeslots):
@@ -982,7 +980,7 @@ def handleResult(last):
         f.write(ics)
         f.close()
         #print ics
-        own_schedule_print = own_schedule_print +('\n-Payments:---------------------------------------------------') + "\n"
+        own_schedule_print = own_schedule_print +('\n-Payments:-------------------------------------------------') + "\n"
         for x in range(weeks):
             own_schedule_print = own_schedule_print +("w%02d:" % convertIndexToWeekNumber(x,starting_week,ending_week))
             for y in range(timeslots):
@@ -1002,7 +1000,7 @@ def handleResult(last):
         f=open('./out/'+name+".txt", 'w+')
         f.write( own_schedule_print + common_part_print + ("\n\n\n © Levente Varga 2018"))
         f.close()
-    to_print = to_print + ('\n=========================================================================================') + "\n"
+    to_print = to_print + ('\n===============================================================') + "\n"
 
     report_to_print=''
     report_to_print = report_to_print + ("Report: ") + '\n'
