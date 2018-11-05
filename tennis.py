@@ -572,8 +572,9 @@ def handle_group(first,last):
                     reason = " due to incompatibilty"
                 else:
                     reason = " due to strict rules"
+                    ranking_failure_counter +=1
                 ranking_failure_report += "    # Ranking failure between: "+name1+" - "+name2 + reason +"\n"
-                ranking_failure_counter +=1
+
 
 
 def handle_rankings():
@@ -946,7 +947,7 @@ def handleResult(last):
     common_part_print = common_part_print +  ("===========================================================================================") + "\n"
     common_part_print = common_part_print +  ("\n\n\n") + "\n"
     for i in range(weeks):
-        common_part_print = common_part_print + ("========= week: "+str(convertIndexToWeekNumber(i,starting_week,ending_week))+"  ===============================================================") + "\n"
+        common_part_print = common_part_print + ("========= week: "+str("%02d" % convertIndexToWeekNumber(i,starting_week,ending_week))+"  ===============================================================") + "\n"
         for j in range(timeslots):
             if result[i][j]:
                 text=result[i][j]
@@ -964,7 +965,7 @@ def handleResult(last):
         own_schedule_print = own_schedule_print + ("\n")
         own_schedule_print = own_schedule_print + ('=======  %s  plays %d times =============================================================' % (name, counter)) + "\n"
         for x in range(weeks):
-            own_schedule_print = own_schedule_print + ('w%d:' % ((convertIndexToWeekNumber(x,starting_week,ending_week)))) + "\n"
+            own_schedule_print = own_schedule_print + ('w%02d:' % ((convertIndexToWeekNumber(x,starting_week,ending_week)))) + "\n"
             for y in range(timeslots):
                 if slot[x][y]=='R' or slot[x][y]=='T':
                     own_schedule_print = own_schedule_print + ('%-36s  %-40s' % (result[x][y], getTSInfo(tsdata[y], str(convertIndexToWeekNumberMachine(x,starting_week,ending_week)) ))) + "\n" 
@@ -983,7 +984,7 @@ def handleResult(last):
         #print ics
         own_schedule_print = own_schedule_print +('\n-Payments:---------------------------------------------------') + "\n"
         for x in range(weeks):
-            own_schedule_print = own_schedule_print +('w'+str((convertIndexToWeekNumber(x,starting_week,ending_week)))+': ')
+            own_schedule_print = own_schedule_print +("w%02d:" % convertIndexToWeekNumber(x,starting_week,ending_week))
             for y in range(timeslots):
                 if slot[x][y]=='R' or slot[x][y]=='T':
                     own_schedule_print = own_schedule_print +(price_list[y])
