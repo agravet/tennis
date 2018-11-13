@@ -580,6 +580,16 @@ def handle_rankings():
         a,b=groups[i]
         handle_group(a,b)
 
+def getPlayerInGroup(group,index):
+    global group_nr
+    if (group < group_nr):
+        a,b=groups[group]
+        if (index>=a and index <= b):
+            slot1,name1,counter1,incomp1,e1,f1=players[index]
+            return name1
+    return ''
+
+
 
 def handle_training_by_best_effort_random(mode):
     global additional_plays
@@ -953,6 +963,38 @@ def handleResult(last):
                 text=" +++ UNUSED : AVAILABLE +++"
             common_part_print = common_part_print +  ('%-36s  %-40s' % (text, getTSInfo(tsdata[j], str(convertIndexToWeekNumberMachine(i,starting_week,ending_week))) )) + "\n"
     common_part_print = common_part_print + ("==============================================================================") + "\n"
+    
+    common_part_print = common_part_print +  ("\n\n\n\n\n\n\n\n")
+    common_part_print = common_part_print +  ("---Rankings----------------------------") + "\n"
+    
+    for group in range(group_nr):
+        common_part_print = common_part_print + ("Group "+str(group+1)) + "\n"
+        for index in range(players_nr):
+            name = getPlayerInGroup(group,index)
+            if name:
+                for i in range(weeks):
+                    for j in range(timeslots):
+                        if result[i][j].find('#')>=0 and result[i][j].find( name )>=0:
+                            text=result[i][j]
+                            text=text.replace('          ','',1000)
+                            text=text.replace('         ','',1000)
+                            text=text.replace('        ','',1000)
+                            text=text.replace('       ','',1000)
+                            text=text.replace('      ','',1000)
+                            text=text.replace('     ','',1000)
+                            text=text.replace('    ','',1000)
+                            text=text.replace('   ','',1000)
+                            text=text.replace('  ','',1000)
+                            text=text.replace(' ','',1000)
+                            text=text.replace('#','',1000)
+                            text=text.replace('-',' ',1000)
+                            text=text.replace('(F)','',1000)
+                            text=text.replace('*','',1000)
+                            if (common_part_print.find(text) < 0):
+                                common_part_print = common_part_print +  ('%s' % (text)) + "\n"
+    common_part_print = common_part_print + ("====================================================") + "\n"
+    
+    
     to_print = to_print + common_part_print
     os.system("rm -rf out")
     for i in range(players_nr):
