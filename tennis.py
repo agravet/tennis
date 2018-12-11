@@ -59,7 +59,7 @@ def pre_read_config():
     global ending_week
     global year
     players_nr=0
-    fh = open("local/tennis.conf", "r")
+    fh = open("tennis.conf", "r")
     raw = fh.read()
     raw=raw.replace('\r\n','\n',1000)
     raw=handle_comment_lines(raw)
@@ -123,7 +123,10 @@ def read_ics_template_footer():
 
 
 def covertWeekNumberToIndex(w_no,st_w,end_w):
-    return (int(end_w)-int(st_w)+52)-1
+	if (int(st_w) <= int(w_no)):
+		return int(w_no)-int(st_w)
+	else:
+		return 52 - int(st_w) + int(w_no)
 
 
 def convertIndexToWeekNumber(w_ind,st_w,end_w):
@@ -179,7 +182,7 @@ def convertDatePrint(day,week_no, hour, min):
     if day == 'Sat': day='-6'
     t = datetime.datetime.strptime(str(getYear(week_no,starting_week,ending_week,year))+"-W"+ str(int(week_no)) + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
     #print "xxx(day:%s,week_no:%s, hour:%s, min:%s -> %s)" % (day,week_no, hour, min, t.__format__("%Y %b %d"))
-    return t.__format__("%b/%b/%y")
+    return t.__format__("%d/%b/%y")
 
 
 
@@ -302,7 +305,7 @@ def read_config():
     for i in range(weeks):
         for j in range(timeslots):
             a[i][j] = ""
-    fh = open("local/tennis.conf", "r")
+    fh = open("tennis.conf", "r")
     raw = fh.read()
     raw=handle_comment_lines(raw)
     raw=raw.replace(' ','',1000)
@@ -424,8 +427,10 @@ def read_config():
         for k in range (len(ts)):
             if ts[k] == 'l':
                 result[covertWeekNumberToIndex(wnr,starting_week,ending_week)][k]=" +++ HOLIDAY: CLOSED +++   "
+                #print "weeknr:"+str(covertWeekNumberToIndex(wnr,starting_week,ending_week))+"read:"+wnr+" closed\n"
             if ts[k] == 's':
                 result[covertWeekNumberToIndex(wnr,starting_week,ending_week)][k]=" +++ HOLIDAY: AVAILABLE +++"
+                #print "weeknr:"+str(covertWeekNumberToIndex(wnr,starting_week,ending_week))+"read:"+wnr+" available\n"
         for i in range(len(players)):
             (data,name,t,z,e,f)=players[i]
             data=copy.deepcopy(handle_exception(data,ts,wnr))
@@ -1074,7 +1079,7 @@ def handleResult(last):
         out_folder="out_"+starting_week+"-"+ending_week
         out_folder_pub=out_folder+"_pub"
         os.system("cp -rf out "+out_folder_pub)
-        os.system("cp local/tennis.conf out/")
+        os.system("cp tennis.conf out/")
         os.system("cp -rf out "+out_folder)
         os.system("rm  -rf "+out_folder+".zip "+out_folder_pub+".zip")
         os.system("unix2dos -q "+ out_folder +"/*.txt")
