@@ -447,21 +447,21 @@ def mark_related_timeslots(slot,week,timeslot):
     if timeslot in related_ts:
         mapped_array=related_ts[timeslot]
         for j in range(len(mapped_array)):
-            if slot[week][mapped_array[j]]=='c' or slot[week][mapped_array[j]]=='n':
+            if slot[week][mapped_array[j]]=='c' or slot[week][mapped_array[j]]=='r':
                 slot[week][mapped_array[j]] = 'b'
 
         if (timeslot == 0 or timeslot == 1 or timeslot == 2) and week > 0:
-            if slot[week-1][9]=='c' or slot[week-1][9]=='n':
+            if slot[week-1][9]=='c' or slot[week-1][9]=='r':
                 slot[week-1][9] = 'b'
-            if slot[week-1][10]=='c' or slot[week-1][10]=='n':
+            if slot[week-1][10]=='c' or slot[week-1][10]=='r':
                 slot[week-1][10] = 'b'
 
         if (timeslot == 9 or timeslot == 10) and week+1 < weeks:
-            if slot[week+1][0]=='c' or slot[week+1][0]=='n':
+            if slot[week+1][0]=='c' or slot[week+1][0]=='r':
                 slot[week+1][0] = 'b'
-            if slot[week+1][1]=='c' or slot[week+1][1]=='n':
+            if slot[week+1][1]=='c' or slot[week+1][1]=='r':
                 slot[week+1][1] = 'b'
-            if slot[week+1][2]=='c' or slot[week+1][2]=='n':
+            if slot[week+1][2]=='c' or slot[week+1][2]=='r':
                 slot[week+1][2] = 'b'
 
 
@@ -516,7 +516,7 @@ def match_players(player1,player2,force,ranking,x,y):
         for j in range(timeslots):
             for i in range(x,weeks-y):
                 if (slot1[i][j] == 'c'
-                    and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != 'a'
+                    and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != '-'
                     and result[i][j] == ""
                     and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                     and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week):
@@ -531,7 +531,7 @@ def match_players(player1,player2,force,ranking,x,y):
         for j in (range(timeslots)):
             for i in range(x,weeks-y):
                 if (slot2[i][j] == 'c'
-                    and slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != 'a'
+                    and slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != '-'
                     and result[i][j] == ""
                     and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                     and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week):
@@ -545,8 +545,8 @@ def match_players(player1,player2,force,ranking,x,y):
                     return (slot1,name1,counter1,incomp1,e1,f1),(slot2,name2,counter2,incomp2,e2,f2),True
         for j in (range(timeslots)):
             for i in range(x,weeks-y):
-                if (slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != 'a'
-                    and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != 'a'
+                if (slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != '-'
+                    and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != '-'
                     and result[i][j] == ""
                     and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                     and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week):
@@ -662,7 +662,7 @@ def readInput(text):
     print text
     # raw_input returns the empty string for "enter"
     yes = {'yes','y', 'ye', ''}
-    no = {'no','n'}
+    no = {'no','r'}
     try:
         choice = raw_input().lower()
 
@@ -1059,7 +1059,7 @@ def handleResult(last):
     #report_to_print = report_to_print +  ("   min plays:        "+str(min)) + '\n'
     #report_to_print = report_to_print +  ("   cycles used:      "+str(cycles_used)) + '\n'
     #report_to_print = report_to_print +  '\n'
-    report_to_print = report_to_print +  (" Â© Levente Varga 2018") + '\n'
+    report_to_print = report_to_print +  ("© Levente Varga 2018") + '\n'
 
     print report_to_print
 
