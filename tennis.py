@@ -992,7 +992,7 @@ def handleResult(last):
                             text=text.replace('  ','',1000)
                             text=text.replace(' ','',1000)
                             text=text.replace('#','',1000)
-                            text=text.replace('-',' ',1000)
+                            text=text.replace('-',',',1000)
                             text=text.replace('(F)','',1000)
                             text=text.replace('*','',1000)
                             if (common_part_print.find(text) < 0):
@@ -1023,7 +1023,8 @@ def handleResult(last):
         ics=ics.replace(' ','',1000)
         if not os.path.exists("out"):
             os.makedirs("out")
-        f=open('./out/'+name+".ics", 'w+')
+        fname=name.replace('*','',1000)
+        f=open('./out/'+fname+".ics", 'w+')
         f.write(ics)
         f.close()
         #print ics
@@ -1044,8 +1045,8 @@ def handleResult(last):
         else:
             own_schedule_print = own_schedule_print + ('   total pay:'+str(price)+ ' Euros') + "\n"
         to_print = to_print + own_schedule_print
-        f=open('./out/'+name+".txt", 'w+')
-        f.write( own_schedule_print + common_part_print + ("\n\n\n Â© Levente Varga 2018"))
+        f=open('./out/'+fname+".txt", 'w+')
+        f.write( own_schedule_print + common_part_print + ("\n\n\n © Levente Varga 2018"))
         f.close()
     to_print = to_print + ('\n===============================================================') + "\n"
 
@@ -1072,7 +1073,7 @@ def handleResult(last):
     if readInput('Are you satisfied with the results? [Y/n] ') :
         stop = True
         '''
-        #send email
+        send email
         print "Sending results by e-mail"
         sendEmail("levente.l.varga@ericsson.com")
         '''
@@ -1084,6 +1085,7 @@ def handleResult(last):
         os.system("rm  -rf "+out_folder+".zip "+out_folder_pub+".zip")
         os.system("unix2dos -q "+ out_folder +"/*.txt")
         os.system("unix2dos -q "+ out_folder_pub +"/*.txt")
+        os.system("unix2dos -q "+ "out" +"/*.txt")
         os.system("zip -rq "+out_folder_pub+".zip "+out_folder_pub)
         os.system("zip -rq "+out_folder+".zip "+out_folder)
         os.system("rm  -rf "+out_folder+" "+out_folder_pub)
