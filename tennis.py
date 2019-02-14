@@ -163,7 +163,7 @@ def convertDate(day,week_no, hour, min):
     if day == 'Thu': day='-4'
     if day == 'Fri': day='-5'
     if day == 'Sat': day='-6'
-    t = datetime.datetime.strptime(str(getYear(week_no,starting_week,ending_week,year))+"-W"+ str(int(week_no)) + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
+    t = datetime.datetime.strptime(str(getYear(week_no,starting_week,ending_week,year))+"-W"+ str(int(week_no)-1) + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
     #print "yyy(day:%s,week_no:%s, hour:%s, min:%s -> %s)" % (day,week_no, hour, min, t.__format__("%Y %b %d"))
     return t.__format__("%Y%m%dT%H%M%S")
 
@@ -180,7 +180,7 @@ def convertDatePrint(day,week_no, hour, min):
     if day == 'Thu': day='-4'
     if day == 'Fri': day='-5'
     if day == 'Sat': day='-6'
-    t = datetime.datetime.strptime(str(getYear(week_no,starting_week,ending_week,year))+"-W"+ str(int(week_no)) + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
+    t = datetime.datetime.strptime(str(getYear(week_no,starting_week,ending_week,year))+"-W"+ str(int(week_no)-1) + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
     #print "xxx(day:%s,week_no:%s, hour:%s, min:%s -> %s)" % (day,week_no, hour, min, t.__format__("%Y %b %d"))
     return t.__format__("%d/%b/%y")
 
