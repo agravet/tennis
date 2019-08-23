@@ -443,25 +443,26 @@ def read_config():
 
 def mark_related_timeslots(slot,week,timeslot):
     #related_ts={0:[0,1,2],1:[0,1,2],2:[0,1,2],4:[4,5],5:[4,5],6:[6,7,8],7:[6,7,8],8:[6,7,8],9:[9,10],10:[9,10]}
-    related_ts={0:[1,2,3],1:[0,2,3],2:[0,1,3],3:[0,1,2],4:[5,6,7,8],5:[4,6,7,8],6:[4,5,7,8],7:[4,5,6,8],8:[4,5,6,7],9:[10],10:[9]}
+    #related_ts={0:[1,2,3],1:[0,2,3],2:[0,1,3],3:[0,1,2],4:[5,6,7,8],5:[4,6,7,8],6:[4,5,7,8],7:[4,5,6,8],8:[4,5,6,7],9:[10],10:[9]}
+    related_ts={0:[1,2,3],1:[0,2,3],2:[0,1,3],3:[0,1,2],4:[5,6,7,8,9],5:[4,6,7,8,9],6:[4,5,7,8,9],7:[4,5,6,8,9],8:[4,5,6,7,9],9:[4,5,6,7,8],10:[11],11:[10]}
     if timeslot in related_ts:
         mapped_array=related_ts[timeslot]
         for j in range(len(mapped_array)):
-            if slot[week][mapped_array[j]]=='c' or slot[week][mapped_array[j]]=='r':
+            if slot[week][mapped_array[j]]=='4' or slot[week][mapped_array[j]]=='2' or slot[week][mapped_array[j]]=='6':
                 slot[week][mapped_array[j]] = 'b'
 
         if (timeslot == 0 or timeslot == 1 or timeslot == 2) and week > 0:
-            if slot[week-1][9]=='c' or slot[week-1][9]=='r':
-                slot[week-1][9] = 'b'
-            if slot[week-1][10]=='c' or slot[week-1][10]=='r':
+            if slot[week-1][10]=='4' or slot[week-1][10]=='2' or slot[week-1][10]=='6':
                 slot[week-1][10] = 'b'
+            if slot[week-1][11]=='4' or slot[week-1][11]=='2' or slot[week-1][11]=='6':
+                slot[week-1][11] = 'b'
 
-        if (timeslot == 9 or timeslot == 10) and week+1 < weeks:
-            if slot[week+1][0]=='c' or slot[week+1][0]=='r':
+        if (timeslot == 10 or timeslot == 11) and week+1 < weeks:
+            if slot[week+1][0]=='4' or slot[week+1][0]=='2' or slot[week+1][0]=='2':
                 slot[week+1][0] = 'b'
-            if slot[week+1][1]=='c' or slot[week+1][1]=='r':
+            if slot[week+1][1]=='4' or slot[week+1][1]=='2' or slot[week+1][1]=='6':
                 slot[week+1][1] = 'b'
-            if slot[week+1][2]=='c' or slot[week+1][2]=='r':
+            if slot[week+1][2]=='4' or slot[week+1][2]=='2'or slot[week+1][2]=='6':
                 slot[week+1][2] = 'b'
 
 
@@ -476,7 +477,7 @@ def check_week(slot, week, plays):
     for i in range(timeslots):
         if slot[week][i]=="T" or slot[week][i]=="R":
             counter+=1
-        if slot[week][i]=="T" or slot[week][i]=="R" or slot[week][i]=="c":
+        if slot[week][i]=="T" or slot[week][i]=="R" or slot[week][i]=="2" or slot[week][i]=="4" or slot[week][i]=="6":
             options_nr+=1
     if (options_nr <= low_slot_nr) or (help_low_nr_games and plays < int(ending_week)-int(starting_week)):
         counter -=1
@@ -498,9 +499,70 @@ def match_players(player1,player2,force,ranking,x,y):
     (slot2,name2,counter2,incomp2,e2,f2)=player2
     if name1 == name2:
         return (slot1,name1,counter1,incomp1),(slot2,name2,counter2,incomp2),False
+
     for j in (range(timeslots)):
         for i in range(x,weeks-y):
-            if (slot1[i][j] == 'c' and slot2[i][j] == 'c'
+            if ((slot1[i][j] == '2') and (slot2[i][j] == '2' or slot2[i][j] == '6')
+	        and ranking==True
+                and result[i][j] == ""
+                and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
+                and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week) :
+                result[i][j] = '%-2s %-15s - %-15s'  % (comments, name1, name2)
+                counter1 +=1
+                counter2 +=1
+                slot1=mark_related_timeslots(slot1,i,j)
+                slot1[i][j] = mark
+                slot2=mark_related_timeslots(slot2,i,j)
+                slot2[i][j] = mark
+                return (slot1,name1,counter1,incomp1,e1,f1),(slot2,name2,counter2,incomp2,e2,f2),True
+    for j in (range(timeslots)):
+        for i in range(x,weeks-y):
+            if ((slot1[i][j] == '4') and (slot2[i][j] == '4' or slot2[i][j] == '6')
+	        and ranking==False
+                and result[i][j] == ""
+                and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
+                and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week) :
+                result[i][j] = '%-2s %-15s - %-15s'  % (comments, name1, name2)
+                counter1 +=1
+                counter2 +=1
+                slot1=mark_related_timeslots(slot1,i,j)
+                slot1[i][j] = mark
+                slot2=mark_related_timeslots(slot2,i,j)
+                slot2[i][j] = mark
+                return (slot1,name1,counter1,incomp1,e1,f1),(slot2,name2,counter2,incomp2,e2,f2),True
+    for j in (range(timeslots)):
+        for i in range(x,weeks-y):
+            if ((slot1[i][j] == '6') and (slot2[i][j] == '6')
+                and result[i][j] == ""
+                and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
+                and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week) :
+                result[i][j] = '%-2s %-15s - %-15s'  % (comments, name1, name2)
+                counter1 +=1
+                counter2 +=1
+                slot1=mark_related_timeslots(slot1,i,j)
+                slot1[i][j] = mark
+                slot2=mark_related_timeslots(slot2,i,j)
+                slot2[i][j] = mark
+                return (slot1,name1,counter1,incomp1,e1,f1),(slot2,name2,counter2,incomp2,e2,f2),True
+    for j in (range(timeslots)):
+        for i in range(x,weeks-y):
+            if ((slot1[i][j] == '6') and (slot2[i][j] == '4' or slot2[i][j] == '6')
+	        and ranking==False
+                and result[i][j] == ""
+                and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
+                and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week) :
+                result[i][j] = '%-2s %-15s - %-15s'  % (comments, name1, name2)
+                counter1 +=1
+                counter2 +=1
+                slot1=mark_related_timeslots(slot1,i,j)
+                slot1[i][j] = mark
+                slot2=mark_related_timeslots(slot2,i,j)
+                slot2[i][j] = mark
+                return (slot1,name1,counter1,incomp1,e1,f1),(slot2,name2,counter2,incomp2,e2,f2),True
+    for j in (range(timeslots)):
+        for i in range(x,weeks-y):
+            if ((slot1[i][j] == '6') and (slot2[i][j] == '2' or slot2[i][j] == '6')
+	        and ranking==True
                 and result[i][j] == ""
                 and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                 and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week) :
@@ -515,8 +577,8 @@ def match_players(player1,player2,force,ranking,x,y):
     if force==True:
         for j in range(timeslots):
             for i in range(x,weeks-y):
-                if (slot1[i][j] == 'c'
-                    and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != '-'
+                if ((slot1[i][j] == '2' or slot1[i][j] == '4' or slot1[i][j] == '6')
+                    and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != '0' and slot2[i][j] != '1' and slot2[i][j] != '3' and slot2[i][j] != '5'and slot2[i][j] != '7'
                     and result[i][j] == ""
                     and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                     and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week):
@@ -530,8 +592,8 @@ def match_players(player1,player2,force,ranking,x,y):
                     return (slot1,name1,counter1,incomp1,e1,f1),(slot2,name2,counter2,incomp2,e2,f2),True
         for j in (range(timeslots)):
             for i in range(x,weeks-y):
-                if (slot2[i][j] == 'c'
-                    and slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != '-'
+                if ((slot1[i][j] == '2' or slot1[i][j] == '4' or slot1[i][j] == '6')
+                    and slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != '0' and slot1[i][j] != '1' and slot1[i][j] != '3' and slot1[i][j] != '5'and slot1[i][j] != '7'
                     and result[i][j] == ""
                     and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                     and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week):
@@ -545,8 +607,8 @@ def match_players(player1,player2,force,ranking,x,y):
                     return (slot1,name1,counter1,incomp1,e1,f1),(slot2,name2,counter2,incomp2,e2,f2),True
         for j in (range(timeslots)):
             for i in range(x,weeks-y):
-                if (slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != '-'
-                    and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != '-'
+                if (slot1[i][j] != 'R' and slot1[i][j] != 'T' and slot1[i][j] != 'b' and slot1[i][j] != '0' and slot1[i][j] != '1' and slot1[i][j] != '3' and slot1[i][j] != '5'and slot1[i][j] != '7'
+                    and slot2[i][j] != 'R' and slot2[i][j] != 'T' and slot2[i][j] != 'b' and slot2[i][j] != '0' and slot2[i][j] != '1' and slot2[i][j] != '3' and slot2[i][j] != '5'and slot2[i][j] != '7'
                     and result[i][j] == ""
                     and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                     and check_week(slot1, i, counter1)<max_play_per_week and check_week(slot2, i, counter2)<max_play_per_week):
@@ -621,7 +683,7 @@ def fill_slots():
                 min_index = -1
                 for i in range(players_nr):
                     slot1,name1,counter1,incomp1,e1,f1=players[i]
-                    if slot1[x][y] == 'c':
+                    if (slot1[x][y] == '2' or slot1[x][y] == '4' or slot1[x][y] == '6'):
                         if min > counter1:
                             min = counter1
                             min_index = i
@@ -629,7 +691,7 @@ def fill_slots():
                     for j in range(players_nr):
                         if (min_index != j):
                             slot2,name2,counter2,incomp2,e2,f2=players[j]
-                            if slot2[x][y] == 'c':
+                            if (slot2[x][y] == '2' or slot2[x][y] == '4' or slot2[x][y] == '6'):
                                 players[min_index],players[j],res = match_players(players[min_index],players[j],False,False,0,0)
 
 
