@@ -949,6 +949,7 @@ def main():
     global stop
     global pause
     global locked
+    global command_line_parameters
     locked = False
     stop = False
     pause = False
@@ -973,42 +974,50 @@ def main():
     print ("weeks_after_ranking="+str(weeks_after_ranking))
     print ('-----------------')
 
+    command_line_parameters = "Command used:\npython tennyis.py"
+
     #read command line parameters
     for i in range(len(sys.argv)):
         val,t_pos =read_pair(sys.argv[i], "max_cycles")
         if val:
             max_cycles = int(val)
             print ("override max_cycles="+str(max_cycles))
+            command_line_parameters = command_line_parameters + " " + ("max_cycles="+str(max_cycles))
             continue
 
         val,t_pos =read_pair(sys.argv[i], "max_plays_per_week")
         if val:
             max_play_per_week = int(val)
             print ("override max_plays_per_week="+str(max_play_per_week))
+            command_line_parameters = command_line_parameters + " " + ("max_plays_per_week="+str(max_play_per_week))
             continue
 
         val,t_pos =read_pair(sys.argv[i], "low_slot_nr")
         if val:
             low_slot_nr = int(val)
             print ("override low_slot_nr="+str(low_slot_nr))
+            command_line_parameters = command_line_parameters + " " + ("low_slot_nr="+str(low_slot_nr))
             continue
 
         val,t_pos =read_pair(sys.argv[i], "additional_plays")
         if val:
             additional_plays = int(val)
             print ("override additional_plays="+str(additional_plays))
+            command_line_parameters = command_line_parameters + " " + ("additional_plays="+str(additional_plays))
             continue
 
         val,t_pos =read_pair(sys.argv[i], "weeks_before_ranking")
         if val:
             weeks_before_ranking = int(val)
             print ("override weeks_before_ranking="+str(weeks_before_ranking))
+            command_line_parameters = command_line_parameters + " " + ("weeks_before_ranking="+str(weeks_before_ranking))
             continue
 
         val,t_pos =read_pair(sys.argv[i], "weeks_after_ranking")
         if val:
             weeks_after_ranking = int(val)
             print ("override weeks_after_ranking="+str(weeks_after_ranking))
+            command_line_parameters = command_line_parameters + " " + ("weeks_after_ranking="+str(weeks_after_ranking))
             continue
 
     global timeslots
@@ -1184,7 +1193,8 @@ def handleResult(last):
     max, min, unused_slots, best_cycle = stored_analyze
     #prezent the results
     to_print = ''
-    common_part_print=''
+    common_part_print=command_line_parameters
+
     common_part_print = common_part_print +  ("\n\n\n\n\n\n\n\n")
     common_part_print = common_part_print +  ("----------------------------------------------------------------------------------------------") + "\n"
     for i in range(group_nr):
