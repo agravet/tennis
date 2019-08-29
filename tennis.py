@@ -1314,8 +1314,8 @@ def handleResult(last):
                             else:
                                 z = './' + slot1[x][y]
                     own_schedule_print = own_schedule_print+(' ') +(z)+(' ')
-        own_schedule_print = own_schedule_print +('\n     shedule result:   ! = resting rule   R = ranking   T = practice')
-        own_schedule_print = own_schedule_print +('\n     preference:       2 = ranking   4 = practice   6 = both')
+        own_schedule_print = own_schedule_print +('\n     shcedule result:   ! = resting rule   R = ranking   T = practice')
+        own_schedule_print = own_schedule_print +('\n     preference:       2 = practice   4 = ranking   6 = both')
 
 
         own_schedule_print = own_schedule_print +("\n     Slot usage(used vs all preferences): %d" % counter) +'/'+("%d" % poss)+' = '+("%.1f" % (100*(float(counter) / float(poss))) )+' %'
