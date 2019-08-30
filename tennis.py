@@ -448,21 +448,21 @@ def mark_related_timeslots(slot,week,timeslot):
     if timeslot in related_ts:
         mapped_array=related_ts[timeslot]
         for j in range(len(mapped_array)):
-            if slot[week][mapped_array[j]]=='4' or slot[week][mapped_array[j]]=='2' or slot[week][mapped_array[j]]=='6':
+            if slot[week][mapped_array[j]]=='2' or slot[week][mapped_array[j]]=='4' or slot[week][mapped_array[j]]=='6':
                 slot[week][mapped_array[j]] = 'b'
 
         if (timeslot == 0 or timeslot == 1 or timeslot == 2) and week > 0:
-            if slot[week-1][10]=='4' or slot[week-1][10]=='2' or slot[week-1][10]=='6':
+            if slot[week-1][10]=='2' or slot[week-1][10]=='4' or slot[week-1][10]=='6':
                 slot[week-1][10] = 'b'
-            if slot[week-1][11]=='4' or slot[week-1][11]=='2' or slot[week-1][11]=='6':
+            if slot[week-1][11]=='2' or slot[week-1][11]=='4' or slot[week-1][11]=='6':
                 slot[week-1][11] = 'b'
 
         if (timeslot == 10 or timeslot == 11) and week+1 < weeks:
-            if slot[week+1][0]=='4' or slot[week+1][0]=='2' or slot[week+1][0]=='2':
+            if slot[week+1][0]=='2' or slot[week+1][0]=='4' or slot[week+1][0]=='2':
                 slot[week+1][0] = 'b'
-            if slot[week+1][1]=='4' or slot[week+1][1]=='2' or slot[week+1][1]=='6':
+            if slot[week+1][1]=='2' or slot[week+1][1]=='4' or slot[week+1][1]=='6':
                 slot[week+1][1] = 'b'
-            if slot[week+1][2]=='4' or slot[week+1][2]=='2'or slot[week+1][2]=='6':
+            if slot[week+1][2]=='2' or slot[week+1][2]=='4'or slot[week+1][2]=='6':
                 slot[week+1][2] = 'b'
 
 
@@ -479,8 +479,8 @@ def check_week(slot, week, plays):
             counter+=1
         if slot[week][i]=="T" or slot[week][i]=="R" or slot[week][i]=="2" or slot[week][i]=="4" or slot[week][i]=="6":
             options_nr+=1
-    if (options_nr <= low_slot_nr) or (help_low_nr_games and plays < int(ending_week)-int(starting_week)):
-        counter -=1
+    #if (options_nr <= low_slot_nr) or (help_low_nr_games and plays < int(ending_week)-int(starting_week)):
+    #    counter -=1
     return counter
 
 
@@ -836,26 +836,128 @@ def fill_slots():
                                 players[min_index],players[j],res = match_players_rand(players[min_index],players[j],False,False,0,0)
 
 
-def fill_slots_rand():
+def getPlayerStats(opt_slot, sched_slot):
+    rank_option = 0
+    practice_option = 0
+    rankings_scheduled = 0
+    practice_scheduled = 0
+    rest_rule = 0;
     for x in range(weeks):
         for y in range(timeslots):
-            if result[x][y] == "":
-                min = weeks
-                min_index = -1
-                for r in range(0,500):
-                    i = random.randint(0, players_nr-1)
-                    slot1,name1,counter1,incomp1,e1,f1=players[i]
-                    if (slot1[x][y] == '2' or slot1[x][y] == '4' or slot1[x][y] == '6'):
-                        if min > counter1:
-                            min = counter1
-                            min_index = i
-                if (min_index != -1):
-                    for r in range(0,500):
-                        j = random.randint(0, players_nr-1)
-                        if (min_index != j):
-                            slot2,name2,counter2,incomp2,e2,f2=players[j]
-                            if (slot2[x][y] == '2' or slot2[x][y] == '4' or slot2[x][y] == '6'):
-                                players[min_index],players[j],res = match_players_rand(players[min_index],players[j],False,False,0,0)
+            if (opt_slot[x][y]=='2'  or opt_slot[x][y]=='6'):
+                practice_option += 1
+            if (opt_slot[x][y]== '4' or opt_slot[x][y]=='6'):
+                rank_option += 1
+            if (sched_slot[x][y]=='R'):
+                rankings_scheduled += 1
+            if (sched_slot[x][y]=='T'):
+                practice_scheduled += 1
+            if (sched_slot[x][y]=='b'):
+                rest_rule += 1
+    return rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule
+
+
+
+def raiseLowestPlayer():
+    ordered = []
+    for i in range(players_nr):
+        sched_slot,name,counter,incomp,e,f=players[i]
+        opt_slot,name,counter,incomp,e,f=players_orig[i]
+        rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule = getPlayerStats(opt_slot, sched_slot)
+        if (practice_option != 0):
+            ordered.append( (name,float(100*(rankings_scheduled+practice_scheduled))/(rank_option+practice_option-rest_rule)) )
+        else:
+            ordered.append( (name, float(100)) )
+    #print ordered
+
+    for i in range(players_nr):
+        for j in range(players_nr):
+            (a_name, a_coef) = ordered[i]
+            (b_name, b_coef) = ordered[j]
+            if (a_coef<b_coef):
+                (t_name,t_coef) = ordered[j]
+                ordered[j] = ordered[i]
+                ordered[i] = (t_name,t_coef)
+
+    for i in range(players_nr):
+        (t_name,t_coef)=ordered[i]
+        if (t_coef>50):
+            return
+        for j in range(players_nr):
+            sched_slot,name,counter,incomp,e,f=players[j]
+            if (t_name == name):
+                 for k in range(players_nr):
+                        if (j != k):
+                            players[j],players[k],res = match_players(players[j],players[k],False,False,0,0)
+                            if (res==True):
+                                sched_slot,namek,counter,incomp,e,f=players[k]
+                                #print(name + str(t_coef )+ "-" + namek+"\n")
+
+
+
+def raiseLowestOptionsPlayer():
+    ordered = []
+    for i in range(players_nr):
+        sched_slot,name,counter,incomp,e,f=players[i]
+        opt_slot,name,counter,incomp,e,f=players_orig[i]
+        rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule = getPlayerStats(opt_slot, sched_slot)
+        if (practice_option != 0):
+            ordered.append( (name, float(rank_option + practice_option-rest_rule)))
+        else:
+            ordered.append( (name, float(100)) )
+
+
+    for i in range(players_nr):
+        for j in range(players_nr):
+            (a_name, a_coef) = ordered[i]
+            (b_name, b_coef) = ordered[j]
+            if (a_coef<b_coef):
+                (t_name,t_coef) = ordered[j]
+                ordered[j] = ordered[i]
+                ordered[i] = (t_name,t_coef)
+
+    for i in range(players_nr):
+        (t_name,t_coef)=ordered[i]
+        if (t_coef>20):
+            return
+        for j in range(players_nr):
+            sched_slot,name,counter,incomp,e,f=players[j]
+            if (t_name == name):
+                 for k in range(players_nr):
+                        if (j != k):
+                            players[j],players[k],res = match_players(players[j],players[k],False,False,0,0)
+                            if (res==True):
+                                sched_slot,namek,counter,incomp,e,f=players[k]
+                                #print(name + str(t_coef )+ "-" + namek+"\n")
+
+
+
+def getLowestPlayerNr():
+    min = 100
+    for i in range(players_nr):
+        sched_slot,name,counter,incomp,e,f=players[i]
+        opt_slot,name,counter,incomp,e,f=players_orig[i]
+        rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule = getPlayerStats(opt_slot, sched_slot)
+        if (practice_option > 0):
+            if ( rankings_scheduled + practice_scheduled < min):
+                min = rankings_scheduled + practice_scheduled
+    return min
+
+
+def getAveragePercent():
+    sum=0
+    ctr=0
+    for i in range(players_nr):
+        sched_slot,name,counter,incomp,e,f=players[i]
+        opt_slot,name,counter,incomp,e,f=players_orig[i]
+        rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule = getPlayerStats(opt_slot, sched_slot)
+        if (practice_option > 0):
+            ctr += 1
+            sum += float((100*(rankings_scheduled+practice_scheduled))/(rank_option+practice_option-rest_rule))
+    if (ctr>0):
+        return float(sum/ctr)
+    else:
+        return 0
 
 
 
@@ -957,8 +1059,8 @@ def main():
     max_play_per_week = 1
     max_slots_left = 0
     max_diff_between_most_and_least_plays=2
-    max_cycles=10000
-    low_slot_nr=5
+    max_cycles=1000
+    low_slot_nr=0
     additional_plays=0
     weeks_before_ranking=1
     weeks_after_ranking=1
@@ -1067,39 +1169,49 @@ def main():
         read_config()
         players_orig=copy.deepcopy(players)
         #handle ranking matches
+
+        for i in range(10):
+            raiseLowestOptionsPlayer()
+
         handle_rankings()
-        #handle training matches, respecting player options
 
-        orig_low_slot_nr = low_slot_nr
-        low_slot_nr = 0
-        handle_training_by_best_effort_random(False)
-        help_low_nr_games=1
-        handle_training_by_best_effort_random(False)
-        low_slot_nr = orig_low_slot_nr
-        handle_training_by_best_effort_random(False)
+        for i in range(10):
+            raiseLowestPlayer()
 
+        if (cycles_used % 2 == 0):
+            orig_low_slot_nr = low_slot_nr
+            low_slot_nr = 0
+            handle_training_by_best_effort_random(False)
+            help_low_nr_games=1
+            handle_training_by_best_effort_random(False)
+            low_slot_nr = orig_low_slot_nr
+            handle_training_by_best_effort_random(False)
+        else:
+            orig_low_slot_nr = low_slot_nr
+            low_slot_nr = 0
+            handle_training_by_best_effort(False)
+            help_low_nr_games=1
+            handle_training_by_best_effort(False)
+            low_slot_nr = orig_low_slot_nr
+            handle_training_by_best_effort(False)
 
-        low_slot_nr = 0
-        handle_training_by_best_effort(False)
-        help_low_nr_games=1
-        handle_training_by_best_effort(False)
-        low_slot_nr = orig_low_slot_nr
-        handle_training_by_best_effort(False)
+        for i in range(5):
+            raiseLowestPlayer()
+        for i in range(5):
+            fill_slots()
 
-        fill_slots_rand()
-        fill_slots_rand()
-        fill_slots_rand()
-        fill_slots_rand()
-        fill_slots_rand()
-        fill_slots()
+        #print "XXXXXXXXXXXXXXXXXXXX"
 
 
         #collect statitistical data
         unused_slots = count_unused_timeslots()
         max,min=analyze()
+        min = getLowestPlayerNr()
         diff_most_least = max-min
         #store best result so far
-        equiv = (diff_most_least*1 + unused_slots*5 + (weeks-min) + 10*ranking_failure_counter)
+        avgPercent = getAveragePercent()
+        equiv = ((20-min)*50 + unused_slots*5 + max*5 + 50*ranking_failure_counter + (100-avgPercent)*10)
+
 
         if best > equiv:
             best = equiv
@@ -1108,7 +1220,7 @@ def main():
             stored_analyze = max, min, unused_slots, cycles_used
             #sys.stdout.write("("+str(diff_most_least)+"/"+str(unused_slots)+"/"+str(min)+"/"+str(ranking_failure_counter)+")")
             base = " ("+str(diff_most_least)+"/"+str(unused_slots)+"/"+str(min)+"/"+str(ranking_failure_counter)+")"
-            base = " diff: %-2d unused: %-2d min: %-2d max: %-2d rank_fail: %-2d score: %-3d " % (diff_most_least, unused_slots, min, max, ranking_failure_counter, equiv)
+            base = " diff: %-2d unused: %-2d min: %-2d max: %-2d avgPercent: %.2f rank_fail: %-2d score: %-3d " % (diff_most_least, unused_slots, min, max, avgPercent, ranking_failure_counter, equiv)
         else:
             counter = counter + 1
             '''
