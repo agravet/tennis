@@ -163,7 +163,7 @@ def convertDate(day,week_no, hour, min):
     if day == 'Thu': day='-4'
     if day == 'Fri': day='-5'
     if day == 'Sat': day='-6'
-    t = datetime.datetime.strptime(str(getYear(week_no,starting_week,ending_week,year))+"-W"+ str(int(week_no)-1) + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
+    t = datetime.datetime.strptime(str(getYear(week_no,starting_week,ending_week,year))+"-W"+ str(int(week_no)-1) + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour)-2, minutes=int(min))
     #print "yyy(day:%s,week_no:%s, hour:%s, min:%s -> %s)" % (day,week_no, hour, min, t.__format__("%Y %b %d"))
     return t.__format__("%Y%m%dT%H%M%S")
 
@@ -206,8 +206,8 @@ def addToICS(info,ts,week_no, desc):
     start_date=convertDate(day,week_no,str(int(hour)-1),min)
     end_date=convertDate(day,week_no,str(int(hour)),min)
     temp_ics=read_ics_template_body()
-    temp_ics = temp_ics.replace("<START_DATE>",start_date,1)
-    temp_ics = temp_ics.replace("<END_DATE>",end_date,1)
+    temp_ics = temp_ics.replace("<START_DATE>",start_date + "Z",1)
+    temp_ics = temp_ics.replace("<END_DATE>",end_date + "Z",1)
     temp_ics = temp_ics.replace("<TENNIS MATCH>",info,1)
     temp_ics = temp_ics.replace("<TENNIS LOCATION>",location,1)
     temp_ics = temp_ics.replace("<TENNIS DESC>",desc,1)
