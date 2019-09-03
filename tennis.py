@@ -1100,7 +1100,7 @@ def main():
     print ("weeks_after_ranking="+str(weeks_after_ranking))
     print ('-----------------')
 
-    command_line_parameters = "Command used:\npython tennyis.py"
+    command_line_parameters = "Command used:\npython tennis.py"
 
     #read command line parameters
     for i in range(len(sys.argv)):
@@ -1338,19 +1338,22 @@ def handleResult(last):
     common_part_print=command_line_parameters
 
     common_part_print = common_part_print +  ("\n\n\n\n\n\n\n\n")
-    common_part_print = common_part_print +  ("----------------------------------------------------------------------------------------------") + "\n"
+    common_part_print = common_part_print +  ("Player groups:=============================================================================") + "\n"
     for i in range(group_nr):
         a,b=groups[i]
-        common_part_print = common_part_print +  ("========= ranking group: "+str(i+1)+"  ==========================================================") + "\n"
+        common_part_print = common_part_print +  ("--------- ranking group: "+str(i+1)+"  ----------------------------------------------------------") + "\n"
         for j in range(a,b+1):
             slot,name,counter,incomp,e,f,mx=players[j]
             common_part_print = common_part_print +  ('%-20s  %-50s  %-20s' % (name,e,f)) + "\n"
-    common_part_print = common_part_print +  ("========= training group: ===============================================================") + "\n"
+    common_part_print = common_part_print +  ("--------- practice group: ------------------------------------------------------------") + "\n"
     for i in range(b+1,players_nr):
         slot,name,counter,incomp,e,f,mx=players[i]
         common_part_print = common_part_print +  ('%-20s  %-50s  %-20s' % (name,e,f)) + "\n"
     common_part_print = common_part_print +  ("===========================================================================================") + "\n"
-    common_part_print = common_part_print +  ("\n\n\n") + "\n"
+    common_part_print = common_part_print +  ("* - Player is not Ericsson employee") + "\n"
+
+
+    common_part_print = common_part_print +  ("\n\n\n\n\n\n\n\n")
 
 
     for i in range(weeks):
@@ -1364,21 +1367,24 @@ def handleResult(last):
     common_part_print = common_part_print + ("==============================================================================") + "\n"
 
 
-    common_part_print = common_part_print +  ("|n\n\n\n---Available timeslots----------------------------") + "\n"
+    common_part_print = common_part_print +  ("\n\n\n\n===Available timeslots============================") + "\n"
 
     for i in range(weeks):
-        common_part_print = common_part_print + ("week: "+str("%02d" % convertIndexToWeekNumber(i,starting_week,ending_week))+" ---------") + "\n"
+        common_part_print = common_part_print + ("week: "+str("%02d" % convertIndexToWeekNumber(i,starting_week,ending_week))+" --------------------------------------") + "\n"
         for j in range(timeslots):
             if (result[i][j] == ""):
                 text=""
                 formatted_price = (" base price/player: EUR %.2f" % (float(price_list[j])))
                 common_part_print = common_part_print +  ('%-0s  %-40s %-20s' % (text, getTSInfo(tsdata[j], str(convertIndexToWeekNumberMachine(i,starting_week,ending_week))) ,formatted_price)) +"\n"
-    common_part_print = common_part_print + ("-------------------------------------------------------") + "\n"
+    common_part_print = common_part_print + ("=======================================================") + "\n"
 
-    common_part_print = common_part_print +  ("\n\n\n")
 
-    common_part_print = common_part_print +  ("---Rankings----------------------------") + "\n"
-    
+
+    common_part_print = common_part_print +  ("\n\n\n\n\n\n\n\n")
+
+
+
+    common_part_print = common_part_print +  ("Rankings===============================") + "\n"
     for group in range(group_nr):
         common_part_print = common_part_print + ("Group "+str(group+1)) + "\n"
         for index in range(players_nr):
@@ -1404,7 +1410,9 @@ def handleResult(last):
                             text=text.replace('*','',1000)
                             if (common_part_print.find(text) < 0):
                                 common_part_print = common_part_print +  ('%s' % (text)) + "\n"
-    common_part_print = common_part_print + ("====================================================") + "\n"
+    common_part_print = common_part_print + ("=======================================") + "\n"
+
+
 
     to_print = to_print + common_part_print
     os.system("rm -rf out")
