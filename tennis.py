@@ -576,7 +576,7 @@ def match_players(player1,player2,force,ranking,x,y):
                     slot2=mark_related_timeslots(slot2,i,j)
                     slot2[i][j] = mark
                     return (slot1,name1,counter1,incomp1,e1,f1,mx1),(slot2,name2,counter2,incomp2,e2,f2,mx2),True
-
+    """
     if force==True:
         for j in range(timeslots):
             for i in range(x,weeks-y):
@@ -623,7 +623,7 @@ def match_players(player1,player2,force,ranking,x,y):
                     slot2=mark_related_timeslots(slot2,i,j)
                     slot2[i][j] = mark
                     return (slot1,name1,counter1,incomp1,e1,f1,mx1),(slot2,name2,counter2,incomp2,e2,f2,mx2),True
-
+    """
     return (slot1,name1,counter1,incomp1,e1,f1,mx1),(slot2,name2,counter2,incomp2,e2,f2,mx2),False
 
 
@@ -722,7 +722,7 @@ def match_players_rand(player1,player2,force,ranking,x,y):
                     and result[i][j] == ""
                     and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                     and check_week(slot1, i, counter1)<int(mx1[i]) and check_week(slot2, i, counter2)<int(mx2[i])):
-                    result[i][j] = '%-2s %-15s - %-15s'  % (comments, name1, name2+"(F)")
+                    result[i][j] = '%-2s %-15s - %-15s'  % (comments, name1, name2)
                     counter1 +=1
                     counter2 +=1
                     slot1=mark_related_timeslots(slot1,i,j)
@@ -739,7 +739,7 @@ def match_players_rand(player1,player2,force,ranking,x,y):
                     and result[i][j] == ""
                     and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                     and check_week(slot1, i, counter1)<int(mx1[i]) and check_week(slot2, i, counter2)<int(mx2[i])):
-                    result[i][j] = '%-2s %-15s - %-15s'  % (comments, name1+"(F)", name2)
+                    result[i][j] = '%-2s %-15s - %-15s'  % (comments, name1, name2)
                     counter1 +=1
                     counter2 +=1
                     slot1=mark_related_timeslots(slot1,i,j)
@@ -756,7 +756,7 @@ def match_players_rand(player1,player2,force,ranking,x,y):
                     and result[i][j] == ""
                     and not isIncluded(name1,incomp1,name2) and not isIncluded(name2,incomp2,name1)
                     and check_week(slot1, i, counter1)<int(mx1[i]) and check_week(slot2, i, counter2)<int(mx2[i])):
-                    result[i][j] = '%-2s %-15s - %-15s'  % (comments, name1+"(F)", name2+"(F)")
+                    result[i][j] = '%-2s %-15s - %-15s'  % (comments, name1, name2)
                     counter1 +=1
                     counter2 +=1
                     slot1=mark_related_timeslots(slot1,i,j)
@@ -879,7 +879,7 @@ def getPlayerStats(opt_slot, sched_slot):
 
 
 
-def raiseLowestPlayer():
+def raiseLowestCoefPlayers(lowLimCoef):
     ordered = []
     for i in range(players_nr):
         sched_slot,name,counter,incomp,e,f,mx=players[i]
@@ -902,7 +902,7 @@ def raiseLowestPlayer():
 
     for i in range(players_nr):
         (t_name,t_coef)=ordered[i]
-        if (t_coef>50):
+        if (t_coef>lowLimCoef):
             return
         for j in range(players_nr):
             sched_slot,name,counter,incomp,e,f,mx=players[j]
@@ -916,7 +916,7 @@ def raiseLowestPlayer():
 
 
 
-def raiseLowestOptionsPlayer():
+def raiseLowestSlotPlayers(lowSlotNr):
     ordered = []
     for i in range(players_nr):
         sched_slot,name,counter,incomp,e,f,mx=players[i]
@@ -939,7 +939,7 @@ def raiseLowestOptionsPlayer():
 
     for i in range(players_nr):
         (t_name,t_coef)=ordered[i]
-        if (t_coef>20):
+        if (t_coef>lowSlotNr):
             return
         for j in range(players_nr):
             sched_slot,name,counter,incomp,e,f,mx=players[j]
@@ -1012,7 +1012,7 @@ def readInput(text):
     yes = {'yes','y', 'ye', ''}
     no = {'no','r'}
     try:
-        choice = raw_input().lower()
+        choice = raw_input()
 
         if choice in yes:
             return True
@@ -1020,7 +1020,7 @@ def readInput(text):
             return False
         else:
             sys.stdout.write("Please respond with 'yes' or 'no'")   
-    except ValueError:
+    except:
         print "."
 
 
@@ -1043,7 +1043,10 @@ def thread_func(i):
     global pause
     while 1:
         #print 'Press <ENTER> to if result is good enough'
-        raw_input("")
+        try:
+            raw_input("")
+        except (EOFError):
+            break
         pause = True
         handleResult(False)
         if stop:
@@ -1080,7 +1083,7 @@ def main():
     max_play_per_week = 1
     max_slots_left = 0
     max_diff_between_most_and_least_plays=2
-    max_cycles=1000
+    max_cycles=200
     low_slot_nr=0
     additional_plays=0
     weeks_before_ranking=1
@@ -1191,33 +1194,36 @@ def main():
         players_orig=copy.deepcopy(players)
         #handle ranking matches
 
-        for i in range(10):
-            raiseLowestOptionsPlayer()
+        for i in range(2):
+            raiseLowestSlotPlayers(20)
 
         handle_rankings()
 
+        for i in range(2):
+            raiseLowestSlotPlayers(50)
+
         for i in range(10):
-            raiseLowestPlayer()
+            raiseLowestCoefPlayers(35)
 
         if (cycles_used % 2 == 0):
             orig_low_slot_nr = low_slot_nr
             low_slot_nr = 0
             handle_training_by_best_effort_random(False)
-            help_low_nr_games=1
-            handle_training_by_best_effort_random(False)
-            low_slot_nr = orig_low_slot_nr
-            handle_training_by_best_effort_random(False)
+            #help_low_nr_games=1
+            #handle_training_by_best_effort_random(False)
+            #low_slot_nr = orig_low_slot_nr
+            #handle_training_by_best_effort_random(False)
         else:
             orig_low_slot_nr = low_slot_nr
             low_slot_nr = 0
-            handle_training_by_best_effort(False)
-            help_low_nr_games=1
-            handle_training_by_best_effort(False)
-            low_slot_nr = orig_low_slot_nr
-            handle_training_by_best_effort(False)
+            #handle_training_by_best_effort(False)
+            #help_low_nr_games=1
+            #handle_training_by_best_effort(False)
+            #low_slot_nr = orig_low_slot_nr
+            #handle_training_by_best_effort(False)
 
         for i in range(5):
-            raiseLowestPlayer()
+            raiseLowestCoefPlayers(30)
         for i in range(5):
             fill_slots()
 
@@ -1231,7 +1237,7 @@ def main():
         diff_most_least = max-min
         #store best result so far
         avgPercent = getAveragePercent()
-        equiv = ((20-min)*50 + unused_slots*5 + max*5 + 50*ranking_failure_counter + (100-avgPercent)*10)
+        equiv = ((100-min)*5 + unused_slots*50 + max*1 + 50*ranking_failure_counter + (100-avgPercent)*5)
 
 
         if best > equiv:
@@ -1309,6 +1315,9 @@ def handleResult(last):
     global weeks_after_ranking
     global help_low_nr_games
     global locked
+
+    players_payment = []
+    players_payment_ctr = 0
 
     if locked:
         return
@@ -1427,35 +1436,58 @@ def handleResult(last):
         #print ics
         (slot1,name1,counter1,incomp1,e1,f1,mx1)=players_orig[i]
         (slot2,name1,counter1,incomp1,e1,f1,mx2)=players[i]
-        own_schedule_print = own_schedule_print +('\n-Schedule vs. preferences:--------------------------------------')
+        own_schedule_print = own_schedule_print +('\n-Schedule vs. preferences:--------------------------------------\n')
         poss = 0
         avoid = 0
+        own_schedule_print += ("     Mon  Mon  Mon  Tue  Thu  Thu  Thu  Fri  Fri  Fri  Sun  Sun\n")
+        own_schedule_print += ("     Mar  Mar  Mar  Ola  Mar  Mar  Mei  Mar  Mar  Mar  Mar  Mar\n")
+        own_schedule_print += ("     1930 2030 2100 2000 700  2000 2000 1930 2030 2130 1900 2000")
         for x in range(weeks):
             own_schedule_print = own_schedule_print+ "\n" +("w%02d:" % convertIndexToWeekNumber(x,starting_week,ending_week))
+            play_count_per_week = 0
+            options_per_week = 0
             for y in range(timeslots):
                     if (slot1[x][y]=='2' or slot1[x][y]=='4' or slot1[x][y]=='6'):
-                        poss = poss + 1
+                        poss += 1
+                        options_per_week += 1
                     if (slot1[x][y]=='0' or slot1[x][y]=='1' or slot1[x][y]=='3' or slot1[x][y]=='5' or slot1[x][y]=='7'):
-                        z = '---'
+                        if (slot2[x][y] == 'R'):
+                            z = 'R/-'
+                        else:
+                            z = '---'
                     else:
+                        pref = "B"
+                        if (slot1[x][y] == '2'):
+                                pref = "P"
+                        if (slot1[x][y] == '4'):
+                                pref = "R"
+                        chosen = ""
+                        if (slot2[x][y] == 'T'):
+                                chosen = "P"
+                        if (slot2[x][y] == 'R'):
+                                chosen = "R"
                         if (slot2[x][y] == 'T' or slot2[x][y] == 'R'):
-                            z = slot2[x][y] + '/' + slot1[x][y]
+                            z = chosen + '/' + pref
+                            play_count_per_week += 1
                         else:
                             if (slot2[x][y] == 'b'):
-                                z = '!/' + slot1[x][y]
+                                z = '!/' + pref
                                 avoid += 1;
                             else:
-                                z = './' + slot1[x][y]
+                                z = './' + pref
                     own_schedule_print = own_schedule_print+(' ') +(z)+(' ')
-        own_schedule_print = own_schedule_print +('\n     shcedule result:   ! = resting rule   R = ranking   T = practice')
-        own_schedule_print = own_schedule_print +('\n     preference:       2 = practice   4 = ranking   6 = both')
-
-
-        own_schedule_print = own_schedule_print +("\n     Slot usage(used vs all preferences): %d" % counter) +'/'+("%d" % poss)+' = '+("%.1f" % (100*(float(counter) / float(poss))) )+' %'
-        own_schedule_print = own_schedule_print +("\n     Slot usage(used vs all preferences minus resting rule): %d" % counter) +'/'+("%d" % (poss - avoid))+' = '+("%.1f" % (100*(float(counter) / float(poss - avoid))) )+' %'
+            own_schedule_print = own_schedule_print + (" | ") +str(play_count_per_week)+("/")+ str(options_per_week)+("/")+mx1[x]
+        own_schedule_print = own_schedule_print +('\n     sched/pref - per timeslot       | sched_nr/pref_nr/max_nr - per week')
+        own_schedule_print = own_schedule_print +('\n                ! = resting rule  R = ranking  P = practice B = both')
+ 
+        own_schedule_print = own_schedule_print +("\n     slot usage(used vs all preferences): %d" % counter) +'/'+("%d" % poss)+' = '+("%.1f" % (100*(float(counter) / float(poss))) )+' %'
+        own_schedule_print = own_schedule_print +("\n     slot usage(used vs all preferences minus resting rule): %d" % counter) +'/'+("%d" % (poss - avoid))+' = '+("%.1f" % (100*(float(counter) / float(poss - avoid))) )+' %'
         own_schedule_print = own_schedule_print +('\n')
 
         own_schedule_print = own_schedule_print +('\n-Payments:------------------------------------------------------') + "\n"
+        own_schedule_print += ("     Mon  Mon  Mon  Tue  Thu  Thu  Thu  Fri  Fri  Fri  Sun  Sun\n")
+        own_schedule_print += ("     Mar  Mar  Mar  Ola  Mar  Mar  Mei  Mar  Mar  Mar  Mar  Mar\n")
+        own_schedule_print += ("     1930 2030 2100 2000 700  2000 2000 1930 2030 2130 1900 2000\n")
         for x in range(weeks):
             own_schedule_print = own_schedule_print +("w%02d:" % convertIndexToWeekNumber(x,starting_week,ending_week))
             for y in range(timeslots):
@@ -1469,13 +1501,24 @@ def handleResult(last):
         if name.find('*')>=0:
             new_price = price*2
             own_schedule_print = own_schedule_print + ('   total pay:'+str(price)+ ' x 2 = '+str(new_price)+' Euros') + "\n"
+            players_payment.append( (name, new_price))
         else:
             own_schedule_print = own_schedule_print + ('   total pay:'+str(price)+ ' Euros') + "\n"
+            players_payment.append( (name, price))
         to_print = to_print + own_schedule_print
         f=open('./out/'+fname+".txt", 'w+')
         f.write( own_schedule_print + common_part_print + ("\n\n\n © Levente Varga 2018"))
         f.close()
+
+    to_print = to_print +('\n-Payments:------------------------------------------------------') + "\n"
+    for x in range(len(players_payment)):
+        name, val = players_payment[x]
+        to_print = to_print +('%-20s  %-5s %-0s' % (name , str(val)," EUR\n"))
+    to_print = to_print +('---------------------------------------------------------------') + "\n"
+
     to_print = to_print + ('\n===============================================================') + "\n"
+
+
 
     report_to_print=''
     report_to_print = report_to_print + ("Report: ") + '\n'
