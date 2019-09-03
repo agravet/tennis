@@ -1413,7 +1413,7 @@ def handleResult(last):
         price = 0
         slot,name,counter,incomp,e,f,mx=players[i]
         ics=read_ics_template_header()
-        own_schedule_print = own_schedule_print + ("\n\n\n\n")
+        own_schedule_print = own_schedule_print + ("\n\n\n\n\n\n\n")
         own_schedule_print = own_schedule_print + ('=======  %s  plays %d times =============================================' % (name, counter)) + "\n"
         for x in range(weeks):
             own_schedule_print = own_schedule_print + ('w%02d:' % ((convertIndexToWeekNumber(x,starting_week,ending_week)))) + "\n"
@@ -1436,12 +1436,13 @@ def handleResult(last):
         #print ics
         (slot1,name1,counter1,incomp1,e1,f1,mx1)=players_orig[i]
         (slot2,name1,counter1,incomp1,e1,f1,mx2)=players[i]
-        own_schedule_print = own_schedule_print +('\n-Schedule vs. preferences:--------------------------------------\n')
+        own_schedule_print = own_schedule_print +('\n     Schedule vs. preferences:-----------------------------------\n')
         poss = 0
         avoid = 0
-        own_schedule_print += ("     Mon  Mon  Mon  Tue  Thu  Thu  Thu  Fri  Fri  Fri  Sun  Sun\n")
-        own_schedule_print += ("     Mar  Mar  Mar  Ola  Mar  Mar  Mei  Mar  Mar  Mar  Mar  Mar\n")
-        own_schedule_print += ("     1930 2030 2100 2000 700  2000 2000 1930 2030 2130 1900 2000")
+        own_schedule_print += ("    |Mon |Mon |Mon |Tue |Thu |Thu |Thu |Fri |Fri |Fri |Sun |Sun |\n")
+        own_schedule_print += ("    |Mart|Mart|Mart|Olar|Mart|Mart|Meil|Mart|Mart|Mart|Mart|Mart|\n")
+        own_schedule_print += ("    |1930|2030|2100|2000|700 |2000|2000|1930|2030|2130|1900|2000|")
+        own_schedule_print = own_schedule_print +('\n     ------------------------------------------------------------')
         for x in range(weeks):
             own_schedule_print = own_schedule_print+ "\n" +("w%02d:" % convertIndexToWeekNumber(x,starting_week,ending_week))
             play_count_per_week = 0
@@ -1454,7 +1455,7 @@ def handleResult(last):
                         if (slot2[x][y] == 'R'):
                             z = 'R/-'
                         else:
-                            z = '---'
+                            z = '   '
                     else:
                         pref = "B"
                         if (slot1[x][y] == '2'):
@@ -1475,35 +1476,38 @@ def handleResult(last):
                                 avoid += 1;
                             else:
                                 z = './' + pref
-                    own_schedule_print = own_schedule_print+(' ') +(z)+(' ')
-            own_schedule_print = own_schedule_print + (" | ") +str(play_count_per_week)+("/")+ str(options_per_week)+("/")+mx1[x]
+                    own_schedule_print = own_schedule_print+('|') +(z)+(' ')
+            own_schedule_print = own_schedule_print + ("| ") +str(play_count_per_week)+("/")+ str(options_per_week)+("/")+mx1[x]
+        own_schedule_print = own_schedule_print +('\n     ------------------------------------------------------------')
         own_schedule_print = own_schedule_print +('\n     sched/pref - per timeslot       | sched_nr/pref_nr/max_nr - per week')
         own_schedule_print = own_schedule_print +('\n                ! = resting rule  R = ranking  P = practice B = both')
  
         own_schedule_print = own_schedule_print +("\n     slot usage(used vs all preferences): %d" % counter) +'/'+("%d" % poss)+' = '+("%.1f" % (100*(float(counter) / float(poss))) )+' %'
         own_schedule_print = own_schedule_print +("\n     slot usage(used vs all preferences minus resting rule): %d" % counter) +'/'+("%d" % (poss - avoid))+' = '+("%.1f" % (100*(float(counter) / float(poss - avoid))) )+' %'
-        own_schedule_print = own_schedule_print +('\n')
+        own_schedule_print = own_schedule_print +('\n\n\n')
 
-        own_schedule_print = own_schedule_print +('\n-Payments:------------------------------------------------------') + "\n"
-        own_schedule_print += ("     Mon  Mon  Mon  Tue  Thu  Thu  Thu  Fri  Fri  Fri  Sun  Sun\n")
-        own_schedule_print += ("     Mar  Mar  Mar  Ola  Mar  Mar  Mei  Mar  Mar  Mar  Mar  Mar\n")
-        own_schedule_print += ("     1930 2030 2100 2000 700  2000 2000 1930 2030 2130 1900 2000\n")
+        own_schedule_print = own_schedule_print +('\n     Payments:---------------------------------------------------') + "\n"
+        own_schedule_print += ("    |Mon |Mon |Mon |Tue |Thu |Thu |Thu |Fri |Fri |Fri |Sun |Sun |\n")
+        own_schedule_print += ("    |Mart|Mart|Mart|Olar|Mart|Mart|Meil|Mart|Mart|Mart|Mart|Mart|\n")
+        own_schedule_print += ("    |1930|2030|2100|2000|700 |2000|2000|1930|2030|2130|1900|2000|\n")
+        own_schedule_print = own_schedule_print +('     ------------------------------------------------------------\n')
         for x in range(weeks):
             own_schedule_print = own_schedule_print +("w%02d:" % convertIndexToWeekNumber(x,starting_week,ending_week))
             for y in range(timeslots):
                 if slot[x][y]=='R' or slot[x][y]=='T':
-                    own_schedule_print = own_schedule_print +(price_list[y])
+                    own_schedule_print = own_schedule_print + ('|') + price_list[y]
                     price += float(price_list[y])
                 else:
-                    own_schedule_print = own_schedule_print +(' -- ')
-                own_schedule_print = own_schedule_print +(' ')
-            own_schedule_print = own_schedule_print +('\n')
+                    own_schedule_print = own_schedule_print +('|    ')
+                #own_schedule_print = own_schedule_print +(' ')
+            own_schedule_print = own_schedule_print +('|\n')
+        own_schedule_print = own_schedule_print +('     ------------------------------------------------------------\n')
         if name.find('*')>=0:
             new_price = price*2
-            own_schedule_print = own_schedule_print + ('   total pay:'+str(price)+ ' x 2 = '+str(new_price)+' Euros') + "\n"
+            own_schedule_print = own_schedule_print + ('     Total pay:'+str(price)+ ' x 2 = '+str(new_price)+' Euros') + "\n"
             players_payment.append( (name, new_price))
         else:
-            own_schedule_print = own_schedule_print + ('   total pay:'+str(price)+ ' Euros') + "\n"
+            own_schedule_print = own_schedule_print + ('     Total pay:'+str(price)+ ' Euros') + "\n"
             players_payment.append( (name, price))
         to_print = to_print + own_schedule_print
         f=open('./out/'+fname+".txt", 'w+')
