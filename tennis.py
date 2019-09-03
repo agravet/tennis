@@ -1237,7 +1237,7 @@ def main():
         diff_most_least = max-min
         #store best result so far
         avgPercent = getAveragePercent()
-        equiv = ((100-min)*5 + unused_slots*50 + max*1 + 50*ranking_failure_counter + (100-avgPercent)*5)
+        equiv = ((100-min)*5 + unused_slots*50 + max*1 + 100*ranking_failure_counter + (100-avgPercent)*5)
 
 
         if best > equiv:
