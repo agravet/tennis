@@ -262,7 +262,7 @@ def handle_exception(slot,str,weeknr, mxp, mx):
     global ending_week
     ts = [0] * len(str)
     for i in range(len(str)):
-        if str[i]!='x':
+        if str[i]!='0':
             ts[i]=str[i]
         else:
             ts[i]=slot[covertWeekNumberToIndex(weeknr,starting_week,ending_week)][i]
@@ -860,9 +860,12 @@ def fill_slots():
 def getPlayerStats(opt_slot, sched_slot):
     rank_option = 0
     practice_option = 0
+    pure_practice_option = 0
     rankings_scheduled = 0
     practice_scheduled = 0
     rest_rule = 0;
+    pure_practice_option = 0
+    ranking_when_both = 0
     for x in range(weeks):
         for y in range(timeslots):
             if (opt_slot[x][y]=='2'  or opt_slot[x][y]=='6'):
@@ -875,7 +878,11 @@ def getPlayerStats(opt_slot, sched_slot):
                 practice_scheduled += 1
             if (sched_slot[x][y]=='b'):
                 rest_rule += 1
-    return rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule
+            if (sched_slot[x][y]=='R' and (opt_slot[x][y]=='6')):
+               ranking_when_both += 1
+            if (sched_slot[x][y]!='b' and (opt_slot[x][y]=='2'  or opt_slot[x][y]=='6')):
+               pure_practice_option += 1
+    return rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule, pure_practice_option-ranking_when_both
 
 
 
@@ -884,9 +891,9 @@ def raiseLowestCoefPlayers(lowLimCoef):
     for i in range(players_nr):
         sched_slot,name,counter,incomp,e,f,mx=players[i]
         opt_slot,name,counter,incomp,e,f, mx=players_orig[i]
-        rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule = getPlayerStats(opt_slot, sched_slot)
+        rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule, practice_option = getPlayerStats(opt_slot, sched_slot)
         if (practice_option != 0):
-            ordered.append( (name,float(100*(rankings_scheduled+practice_scheduled))/(rank_option+practice_option-rest_rule)) )
+            ordered.append( (name,float(100*(practice_scheduled))/(practice_option)) )
         else:
             ordered.append( (name, float(100)) )
     #print ordered
@@ -921,7 +928,7 @@ def raiseLowestSlotPlayers(lowSlotNr):
     for i in range(players_nr):
         sched_slot,name,counter,incomp,e,f,mx=players[i]
         opt_slot,name,counter,incomp,e,f,mx=players_orig[i]
-        rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule = getPlayerStats(opt_slot, sched_slot)
+        rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule, practice_option = getPlayerStats(opt_slot, sched_slot)
         if (practice_option != 0):
             ordered.append( (name, float(rank_option + practice_option-rest_rule)))
         else:
@@ -958,8 +965,8 @@ def getLowestPlayerNr():
     for i in range(players_nr):
         sched_slot,name,counter,incomp,e,f,mx=players[i]
         opt_slot,name,counter,incomp,e,f, mx=players_orig[i]
-        rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule = getPlayerStats(opt_slot, sched_slot)
-        if (practice_option > 0):
+        rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule, pure_practice_option = getPlayerStats(opt_slot, sched_slot)
+        if (pure_practice_option > 0):
             if ( rankings_scheduled + practice_scheduled < min):
                 min = rankings_scheduled + practice_scheduled
     return min
@@ -971,15 +978,30 @@ def getAveragePercent():
     for i in range(players_nr):
         sched_slot,name,counter,incomp,e,f,mx=players[i]
         opt_slot,name,counter,incomp,e,f, mx=players_orig[i]
-        rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule = getPlayerStats(opt_slot, sched_slot)
-        if (practice_option > 0):
+        rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule, pure_practice_option = getPlayerStats(opt_slot, sched_slot)
+        if (pure_practice_option > 0):
             ctr += 1
-            sum += float((100*(rankings_scheduled+practice_scheduled))/(rank_option+practice_option-rest_rule))
+            ratio = float((100*(practice_scheduled))/(pure_practice_option))
+            #print (ratio)
+            sum += ratio
+    #print "----"
     if (ctr>0):
         return float(sum/ctr)
     else:
         return 0
 
+
+def getMinimumPercent():
+    minimum = float(100)
+    for i in range(players_nr):
+        sched_slot,name,counter,incomp,e,f,mx=players[i]
+        opt_slot,name,counter,incomp,e,f, mx=players_orig[i]
+        rank_option, practice_option, rankings_scheduled, practice_scheduled, rest_rule, pure_practice_option = getPlayerStats(opt_slot, sched_slot)
+        if (practice_option > 0):
+            ratio = float((100*(practice_scheduled))/(practice_option))
+            if (minimum > ratio):
+                minimum = ratio
+    return minimum
 
 
 
@@ -1076,6 +1098,7 @@ def main():
     global pause
     global locked
     global command_line_parameters
+    global result_txt
     locked = False
     stop = False
     pause = False
@@ -1083,7 +1106,7 @@ def main():
     max_play_per_week = 1
     max_slots_left = 0
     max_diff_between_most_and_least_plays=2
-    max_cycles=200
+    max_cycles=500
     low_slot_nr=0
     additional_plays=0
     weeks_before_ranking=1
@@ -1172,7 +1195,7 @@ def main():
     sys.stdout.write("\nStarted:")
     sys.stdout.flush()
     cycles_used=0
-    best = 100000
+    best = -1000
     best_index = 0
     best_cycle = 0
     counter=0
@@ -1203,7 +1226,7 @@ def main():
             raiseLowestSlotPlayers(50)
 
         for i in range(10):
-            raiseLowestCoefPlayers(35)
+            raiseLowestCoefPlayers(30)
 
         if (cycles_used % 2 == 0):
             orig_low_slot_nr = low_slot_nr
@@ -1236,18 +1259,20 @@ def main():
         min = getLowestPlayerNr()
         diff_most_least = max-min
         #store best result so far
-        avgPercent = getAveragePercent()
-        equiv = ((100-min)*5 + unused_slots*50 + max*1 + 100*ranking_failure_counter + (100-avgPercent)*5)
+        percent = getAveragePercent()
+        equiv = (min*10 - unused_slots*10 - max*1 - 100*ranking_failure_counter + percent)
 
 
-        if best > equiv:
+        if best < equiv:
             best = equiv
             stored_result=copy.deepcopy(result)
             stored_players=copy.deepcopy(players)
             stored_analyze = max, min, unused_slots, cycles_used
             #sys.stdout.write("("+str(diff_most_least)+"/"+str(unused_slots)+"/"+str(min)+"/"+str(ranking_failure_counter)+")")
             base = " ("+str(diff_most_least)+"/"+str(unused_slots)+"/"+str(min)+"/"+str(ranking_failure_counter)+")"
-            base = " diff: %-2d unused: %-2d min: %-2d max: %-2d avgPercent: %.2f rank_fail: %-2d score: %-3d " % (diff_most_least, unused_slots, min, max, avgPercent, ranking_failure_counter, equiv)
+            result_txt = " diff: %-2d unused: %-2d min: %-2d max: %-2d percent: %.2f rank_fail: %-2d score: %-3d " % (diff_most_least, unused_slots, min, max, percent, ranking_failure_counter, equiv)
+            base = result_txt
+            result_txt = ("\nresult: ") + result_txt + ("\n")
         else:
             counter = counter + 1
             '''
@@ -1335,7 +1360,7 @@ def handleResult(last):
     max, min, unused_slots, best_cycle = stored_analyze
     #prezent the results
     to_print = ''
-    common_part_print=command_line_parameters
+    common_part_print=command_line_parameters + result_txt
 
     common_part_print = common_part_print +  ("\n\n\n\n\n\n\n\n")
     common_part_print = common_part_print +  ("Player groups:=============================================================================") + "\n"
@@ -1444,18 +1469,24 @@ def handleResult(last):
         #print ics
         (slot1,name1,counter1,incomp1,e1,f1,mx1)=players_orig[i]
         (slot2,name1,counter1,incomp1,e1,f1,mx2)=players[i]
-        own_schedule_print = own_schedule_print +('\n     Schedule vs. preferences:-----------------------------------\n')
+        own_schedule_print = own_schedule_print +('\n\n\n     Schedule vs. preferences:-----------------------------------\n')
         poss = 0
         avoid = 0
         own_schedule_print += ("    |Mon |Mon |Mon |Tue |Thu |Thu |Thu |Fri |Fri |Fri |Sun |Sun |\n")
         own_schedule_print += ("    |Mart|Mart|Mart|Olar|Mart|Mart|Meil|Mart|Mart|Mart|Mart|Mart|\n")
         own_schedule_print += ("    |1930|2030|2100|2000|700 |2000|2000|1930|2030|2130|1900|2000|")
         own_schedule_print = own_schedule_print +('\n     ------------------------------------------------------------')
+        practice_nr = 0
+        ranking_nr = 0
+        practice_poss = 0
+        ranking_when_both = 0
         for x in range(weeks):
             own_schedule_print = own_schedule_print+ "\n" +("w%02d:" % convertIndexToWeekNumber(x,starting_week,ending_week))
             play_count_per_week = 0
             options_per_week = 0
             for y in range(timeslots):
+                    if ((slot2[x][y] != 'b') and (slot1[x][y] == '2'or slot1[x][y] == '6')):
+                        practice_poss += 1
                     if (slot1[x][y]=='2' or slot1[x][y]=='4' or slot1[x][y]=='6'):
                         poss += 1
                         options_per_week += 1
@@ -1467,14 +1498,18 @@ def handleResult(last):
                     else:
                         pref = "B"
                         if (slot1[x][y] == '2'):
-                                pref = "P"
+                            pref = "P"
                         if (slot1[x][y] == '4'):
-                                pref = "R"
+                            pref = "R"
                         chosen = ""
                         if (slot2[x][y] == 'T'):
                                 chosen = "P"
+                                practice_nr += 1
                         if (slot2[x][y] == 'R'):
                                 chosen = "R"
+                                ranking_nr += 1
+                        if (slot2[x][y] == 'R' and slot1[x][y] == '6'):
+                                ranking_when_both += 1
                         if (slot2[x][y] == 'T' or slot2[x][y] == 'R'):
                             z = chosen + '/' + pref
                             play_count_per_week += 1
@@ -1483,15 +1518,17 @@ def handleResult(last):
                                 z = '!/' + pref
                                 avoid += 1;
                             else:
-                                z = './' + pref
+                                z = '-/' + pref
                     own_schedule_print = own_schedule_print+('|') +(z)+(' ')
             own_schedule_print = own_schedule_print + ("| ") +str(play_count_per_week)+("/")+ str(options_per_week)+("/")+mx1[x]
         own_schedule_print = own_schedule_print +('\n     ------------------------------------------------------------')
         own_schedule_print = own_schedule_print +('\n     sched/pref - per timeslot       | sched_nr/pref_nr/max_nr - per week')
         own_schedule_print = own_schedule_print +('\n                ! = resting rule  R = ranking  P = practice B = both')
- 
-        own_schedule_print = own_schedule_print +("\n     slot usage(used vs all preferences): %d" % counter) +'/'+("%d" % poss)+' = '+("%.1f" % (100*(float(counter) / float(poss))) )+' %'
-        own_schedule_print = own_schedule_print +("\n     slot usage(used vs all preferences minus resting rule): %d" % counter) +'/'+("%d" % (poss - avoid))+' = '+("%.1f" % (100*(float(counter) / float(poss - avoid))) )+' %'
+
+        #own_schedule_print = own_schedule_print +("\n     slot usage(used vs all preferences): %d" % counter) +'/'+("%d" % poss)+' = '+("%.1f" % (100*(float(counter) / float(poss))) )+' %'
+        #own_schedule_print = own_schedule_print +("\n     slot usage(used vs all preferences minus resting rule): %d" % counter) +'/'+("%d" % (poss - avoid))+' = '+("%.1f" % (100*(float(counter) / float(poss - avoid))) )+' %'
+        if(practice_poss>0):
+                                        own_schedule_print = own_schedule_print +("\n     slot usage(practice vs practive real poss): %d" % practice_nr) +'/'+("%d" % (practice_poss-ranking_when_both))+' = '+("%.1f" % (100*(float(practice_nr) / float(practice_poss-ranking_when_both))) )+' %'
         own_schedule_print = own_schedule_print +('\n\n\n')
 
         own_schedule_print = own_schedule_print +('\n     Payments:---------------------------------------------------') + "\n"
