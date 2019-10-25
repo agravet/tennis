@@ -333,8 +333,8 @@ def getTimeslotData(ts):
 
 def addToICS(info,ts,week_no, desc):
     day,hour,min,location = getTimeslotData(ts)
-    start_date=convertDate(day,week_no,str(int(hour)-1),min)
-    end_date=convertDate(day,week_no,str(int(hour)),min)
+    start_date=convertDate(day,week_no,str(int(hour)),min)
+    end_date=convertDate(day,week_no,str(int(hour)+1),min)
     temp_ics=read_ics_template_body()
     temp_ics = temp_ics.replace("<START_DATE>",start_date + "Z",1)
     temp_ics = temp_ics.replace("<END_DATE>",end_date + "Z",1)
