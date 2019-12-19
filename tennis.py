@@ -289,9 +289,9 @@ def convertDatePrint(day,week_no, hour, min):
     if day == 'Thu': day='-4'
     if day == 'Fri': day='-5'
     if day == 'Sat': day='-6'
-    print (str(getYear(week_no,starting_week,ending_week,year))+"-W"+ str(int(week_no)) + day, "%Y-W%W-%w")
+    #print (str(getYear(week_no,starting_week,ending_week,year))+"-W"+ str(int(week_no)) + day, "%Y-W%W-%w")
     t = datetime.datetime.strptime(str(getYear(week_no,starting_week,ending_week,year))+"-W"+ str(int(week_no)) + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour), minutes=int(min))
-    print "xxx(day:%s,week_no:%s, hour:%s, min:%s -> %s)" % (day,week_no, hour, min, t.__format__("%Y %b %d"))
+    #print "xxx(day:%s,week_no:%s, hour:%s, min:%s -> %s)" % (day,week_no, hour, min, t.__format__("%Y %b %d"))
     return t.__format__("%d/%b/%y")
 
 
@@ -443,6 +443,7 @@ def isIncluded(name, list, elem):
 
 
 def read_config():
+    global orig_rules
     global timeslots
     global weeks
     global raw
@@ -458,6 +459,7 @@ def read_config():
     groups=[0]*group_nr
     player_counter=-1
     players = [0] * players_nr
+    orig_rules = [0] * players_nr
     a = [0] * weeks
     for i in range(weeks):
         a[i] = [0] * timeslots
@@ -503,6 +505,7 @@ def read_config():
             data, mx = copy.deepcopy(handle_rule(rule,weeks,timeslots,mxp))
             players[player_counter]=(data,name,0,[],email,phone, mx)
             tlength = len(rule)
+            orig_rules[player_counter]=rule
             if timeslots == 0:
                 timeslots=tlength
             else:
@@ -551,6 +554,7 @@ def read_config():
             phone=name_list[2]
             rulel,t_pos=read_value(raw[pos:],"rule")
             mxp,rule = get_slot_data(rulel)
+            orig_rules[player_counter]=rule
             data, mx = copy.deepcopy(handle_rule(rule,weeks,timeslots, mxp))
             players[player_counter]=(data,name,0,[],email,phone, mx)
             pos+=t_pos
@@ -853,6 +857,7 @@ def handle_group(first,last):
     global ranking_failure_report
     global weeks_before_ranking
     global weeks_after_ranking
+    global orig_rules
     for i in  range(first, last+1):
         for j in range(i+1, last+1):
             players[i],players[j],res = match_players_rand(players[i],players[j],True,True,weeks_before_ranking,weeks_after_ranking)
@@ -863,8 +868,16 @@ def handle_group(first,last):
                     ranking_failure_report += "    # No ranking between: "+name1+" - "+name2 + " due to incompatibilty" +"\n"
                 else:
                     ranking_failure_counter +=1
-                    ranking_failure_report += "    # Ranking failure between: "+name1+" - "+name2 + " due to strict rules" +"\n"
-
+                    ranking_failure_report += "\n\n"
+                    ranking_failure_report += "    # Ranking failure due to strict rules between :" +"\n"
+                    ranking_failure_report += "         "+ orig_rules[i] +" : " + name1 + " \n"
+                    ranking_failure_report += "         "+ orig_rules[j] +" : " + name2 + " \n"
+                    ranking_failure_report += "\n\n"
+                    ranking_failure_report += "    You have 3 options:\n"
+                    ranking_failure_report += "     1) Modify your preferences to have common slots.\n"
+                    ranking_failure_report += "     2) No schedule, you can book an unscheduled slot. If not available: 3)!!!\n"
+                    ranking_failure_report += "     3) No play, you'll get 0 points each.\n"
+                    ranking_failure_report += "\n\n\n\n"
 
 
 #####################################################################################
@@ -1728,7 +1741,7 @@ def main():
         percent = getAveragePercent()
 
 
-        equiv = (min*10 - unused_slots*10 - max*1 - 100*ranking_failure_counter + percent)
+        equiv = (min*10 - unused_slots*10 - max*1 - 100*ranking_failure_counter + percent - diff_most_least*1)
 
 
         if best < equiv:
