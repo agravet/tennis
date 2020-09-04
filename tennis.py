@@ -267,7 +267,7 @@ def convertDate(day,week_no, hour, min):
     if day == 'Thu': day='-4'
     if day == 'Fri': day='-5'
     if day == 'Sat': day='-6'
-    t = datetime.datetime.strptime(str(getYear(week_no,starting_week,ending_week,year))+"-W"+ str(int(week_no)) + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour)-2, minutes=int(min))
+    t = datetime.datetime.strptime(str(getYear(week_no,starting_week,ending_week,year))+"-W"+ str(int(week_no)) + day, "%Y-W%W-%w") + datetime.timedelta(hours=int(hour)-3, minutes=int(min))
     #print "yyy(day:%s,week_no:%s, hour:%s, min:%s -> %s)" % (day,week_no, hour, min, t.__format__("%Y %b %d"))
     return t.__format__("%Y%m%dT%H%M%S")
 
@@ -778,7 +778,7 @@ def match_players_rand(player1,player2,force,ranking,x,y):
                     return (slot1,name1,counter1,incomp1,e1,f1,mx1),(slot2,name2,counter2,incomp2,e2,f2,mx2),True
 
     if (ranking == True):
-        for q in range(0,200):
+        for q in range(0,1000):
             j=random.randint(0, timeslots-1)
             i=random.randint(0+x, weeks-1-y)
             if i!=j:
@@ -858,8 +858,73 @@ def handle_group(first,last):
     global weeks_before_ranking
     global weeks_after_ranking
     global orig_rules
-    for i in  range(first, last+1):
-        for j in range(i+1, last+1):
+    ran=random.randint(0, 1)
+    if(ran==1):
+        for i in  range(first, last+1):
+            for j in range(i+1, last+1):
+                players[i],players[j],res = match_players_rand(players[i],players[j],True,True,weeks_before_ranking,weeks_after_ranking)
+                if res == False:
+                    slot1,name1,counter1,incomp1,e1,f1,mx1=players[i]
+                    slot2,name2,counter2,incomp2,e2,f2,mx2=players[j]
+                    if isIncluded(name1,incomp1,name2) or isIncluded(name2,incomp2,name1):
+                        ranking_failure_report += "    # No ranking between: "+name1+" - "+name2 + " due to incompatibilty" +"\n"
+                    else:
+                        ranking_failure_counter +=1
+                        ranking_failure_report += "\n\n"
+                        ranking_failure_report += "    # Ranking failure due to strict rules between :" +"\n"
+                        ranking_failure_report += "         "+ orig_rules[i] +" : " + name1 + " \n"
+                        ranking_failure_report += "         "+ orig_rules[j] +" : " + name2 + " \n"
+                        ranking_failure_report += "\n\n"
+                        ranking_failure_report += "    You have 3 options:\n"
+                        ranking_failure_report += "     1) Modify your preferences to have common slots.\n"
+                        ranking_failure_report += "     2) No schedule, you can book an unscheduled slot. If not available: 3)!!!\n"
+                        ranking_failure_report += "     3) No play, you'll get 0 points each.\n"
+                        ranking_failure_report += "\n\n\n\n"
+    else:
+        for i in  reversed(range(first, last+1)):
+            for j in reversed(range(i+1, last+1)):
+                players[i],players[j],res = match_players_rand(players[i],players[j],True,True,weeks_before_ranking,weeks_after_ranking)
+                if res == False:
+                    slot1,name1,counter1,incomp1,e1,f1,mx1=players[i]
+                    slot2,name2,counter2,incomp2,e2,f2,mx2=players[j]
+                    if isIncluded(name1,incomp1,name2) or isIncluded(name2,incomp2,name1):
+                        ranking_failure_report += "    # No ranking between: "+name1+" - "+name2 + " due to incompatibilty" +"\n"
+                    else:
+                        ranking_failure_counter +=1
+                        ranking_failure_report += "\n\n"
+                        ranking_failure_report += "    # Ranking failure due to strict rules between :" +"\n"
+                        ranking_failure_report += "         "+ orig_rules[i] +" : " + name1 + " \n"
+                        ranking_failure_report += "         "+ orig_rules[j] +" : " + name2 + " \n"
+                        ranking_failure_report += "\n\n"
+                        ranking_failure_report += "    You have 3 options:\n"
+                        ranking_failure_report += "     1) Modify your preferences to have common slots.\n"
+                        ranking_failure_report += "     2) No schedule, you can book an unscheduled slot. If not available: 3)!!!\n"
+                        ranking_failure_report += "     3) No play, you'll get 0 points each.\n"
+                        ranking_failure_report += "\n\n\n\n"
+
+
+def handle_group2(first,last):
+    global ranking_failure_counter
+    global ranking_failure_report
+    global weeks_before_ranking
+    global weeks_after_ranking
+    global orig_rules
+    global result
+
+
+    marker = [[0]*10 for i in range(10)]
+    for i in  range(0, 10):
+        for j in range(0, 10):
+            marker[i][j]=False
+
+
+    for q in range(0,25):
+        i=random.randint(first, last)
+        j=random.randint(first, last)
+        if i!=j and marker[i][j]==False and marker[j][i]==False:
+            #print("%d %d" %(i,j))
+            marker[i][j]==True
+            marker[j][i]==True
             players[i],players[j],res = match_players_rand(players[i],players[j],True,True,weeks_before_ranking,weeks_after_ranking)
             if res == False:
                 slot1,name1,counter1,incomp1,e1,f1,mx1=players[i]
@@ -878,8 +943,7 @@ def handle_group(first,last):
                     ranking_failure_report += "     2) No schedule, you can book an unscheduled slot. If not available: 3)!!!\n"
                     ranking_failure_report += "     3) No play, you'll get 0 points each.\n"
                     ranking_failure_report += "\n\n\n\n"
-
-
+    #print("---")
 #####################################################################################
 
 
@@ -1331,7 +1395,6 @@ def handleResult(last):
             common_part_print = common_part_print +  ('%-36s  %-40s' % (text, getTSInfo(tsdata[j], str(convertIndexToWeekNumber(i,starting_week,ending_week))) )) + "\n"
     common_part_print = common_part_print + ("==============================================================================") + "\n"
 
-
     common_part_print = common_part_print +  ("\n\n\n\n===Available timeslots============================") + "\n"
 
     for i in range(weeks):
@@ -1614,6 +1677,7 @@ def main():
     additional_plays=0
     weeks_before_ranking=1
     weeks_after_ranking=1
+    prework=False
     if len(sys.argv) > 1 and (sys.argv[1]=="help" or sys.argv[1]=="-h" or sys.argv[1]=="--help"):
             print ("Usage:")
             print ("python "+sys.argv[0]+" max_plays_per_week=1 low_slot_nr=5 additional_plays=0 max_cycles=5000 weeks_before_ranking=1 weeks_after_ranking=1")
@@ -1671,6 +1735,11 @@ def main():
             print ("override weeks_after_ranking="+str(weeks_after_ranking))
             command_line_parameters = command_line_parameters + " " + ("weeks_after_ranking="+str(weeks_after_ranking))
             continue
+        val,t_pos =read_pair(sys.argv[i], "prework")
+        if val:
+            prework = True
+            command_line_parameters = command_line_parameters + " " + ("prework="+str(prework))
+            continue
 
 
     sys.stdout.write("\nStarted:")
@@ -1697,8 +1766,41 @@ def main():
         players_orig=copy.deepcopy(players)
         #handle ranking matches
 
-        for i in range(2):
-            raiseLowestSlotPlayers(20)
+        if prework:
+            ts_list_print="\n\n\n\n\n\n"
+
+
+            for slot,name,counter,incomp,e,f,mx in players:
+                ts_list_print += name + '\n'
+
+            ts_list_print= ts_list_print + "\n\n\n\n\n\n"
+
+            for j in range(timeslots):
+                slot_name = str(tsdata[j])
+                slot_code = "PS"+str("%02d" % j)
+                ts_list_print += ('%-40s  %-15s' % (slot_name, slot_code)) + "\n"
+
+            ts_list_print= ts_list_print + "\n\n\n\n\n\n"
+
+            for j in range(timeslots):
+                slot_name = str(tsdata[j])
+                slot_code = "RS"+str("%02d" % j)
+                ts_list_print += ('%-40s  %-15s' % (slot_name, slot_code)) + "\n"
+
+            ts_list_print= ts_list_print + "\n\n\n\n\n\n"
+            for i in range(weeks):
+                #ts_list_print = ts_list_print + ("week: "+str("%02d" % convertIndexToWeekNumber(i,starting_week,ending_week))+"") + "\n"
+                for j in range(timeslots):
+                    slot_name = ('%s' % (getTSInfo(tsdata[j], str(convertIndexToWeekNumber(i,starting_week,ending_week))) ))
+                    slot_code = ("W"+str("%02d" % convertIndexToWeekNumber(i,starting_week,ending_week))+"") +"S"+str("%02d" % j)
+                    ts_list_print += ('%-40s  %-15s' % (slot_name, slot_code)) + "\n"
+            ts_list_print= ts_list_print + "\n\n\n\n\n\n"
+            print (ts_list_print.replace('_',' ',1000))
+
+            sys.exit()
+
+        #for i in range(2):
+        #    raiseLowestSlotPlayers(20)
 
         ranking_failure_counter = 0
         ranking_failure_report = ""
@@ -1784,6 +1886,7 @@ def main():
         if stop:
             print "......."
             exit(0)
+
     handleResult(True)
 
 
