@@ -781,6 +781,7 @@ def match_players_rand(player1,player2,force,ranking,x,y):
         for q in range(0,1000):
             j=random.randint(0, timeslots-1)
             i=random.randint(0+x, weeks-1-y)
+            #print("%d %d"%(j,i))
             if i!=j:
                 if ((slot1[i][j] == OPTION_RANKING or slot1[i][j] == OPTION_BOTH) and (slot2[i][j] == OPTION_RANKING or slot2[i][j] == OPTION_BOTH)
                     and result[i][j] == ""
@@ -1767,6 +1768,7 @@ def main():
         #handle ranking matches
 
         if prework:
+            print('xxxxx')
             ts_list_print="\n\n\n\n\n\n"
 
 
@@ -1843,7 +1845,7 @@ def main():
         percent = getAveragePercent()
 
 
-        equiv = (min*10 - unused_slots*10 - max*1 - 100*ranking_failure_counter + percent - diff_most_least*1)
+        equiv = (min*30 - unused_slots*2 - max*20 - 100*ranking_failure_counter + percent - diff_most_least*20)
 
 
         if best < equiv:
